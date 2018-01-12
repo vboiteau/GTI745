@@ -10,11 +10,15 @@
 Right: radial menu&nbsp; &nbsp; Shift+Right: control menu<br>
 <canvas id="myCanvas" width="600" height="500" style="border:2px solid #000000;">
 </canvas>
-<br>
+<p>
 <label><input id="TOOL_MODE_PENCIL" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_PENCIL);" checked="">Pencil</label>
 <label><input id="TOOL_MODE_RECT_SELECT" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_RECT_SELECT);">Rectangle Select</label>
 <label><input id="TOOL_MODE_MOVE_SELECTION" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_MOVE_SELECTION);">Move Selection</label>
-<br>
+</p>
+<label><input id="TOOL_MODE_SYMETRY" type="checkbox" name="symetry" onclick="drawSymetry = !drawSymetry">Symetry</label>
+<p>
+
+</p>
 <button onclick="frameAllButtonHandler()">Frame All</button>
 <button onclick="deleteSelectionButtonHandler()">Delete Selection</button>
 <br><br>
@@ -1114,6 +1118,7 @@ var mouseHistory = []; // array of Vec2 in pixel space
 const zoomFactorPerPixelDragged = 1.005;
 
 var showMouseCoordinates = false;
+var drawSymetry = false;
 
 // The below tool modes are constants,
 // but are defined using var instead of const
@@ -1174,6 +1179,10 @@ var redraw = function() {
 		case TOOL_MODE_PENCIL :
 			draw2.setStrokeColor( 0, 0, 0 ); // black
 			draw2.drawPolyline( mouseHistory );
+        console.dir(drawSymetry);
+      if (drawSymetry) {
+        draw2.drawPolyline( mouseHistory.map(({x, y}) => ({ x: canvas.width - x, y })) );
+      }
 			break;
 		case TOOL_MODE_RECT_SELECT :
 			draw2.setFillColor( 255, 128, 0, 0.3 ); // transparent orange
@@ -1279,10 +1288,20 @@ function mouseUpHandler(e) {
 		switch ( currentToolMode ) {
 		case TOOL_MODE_PENCIL :
 			newStroke = new Stroke();
+      let symetryStroke = null;
+      if (drawSymetry) {
+        symetryStroke = new Stroke();
+      }
 			for ( i = 0; i < mouseHistory.length; ++i ) {
 				newStroke.pushPoint( draw2.convertPixelsToWorldSpaceUnits( mouseHistory[i] ) );
+        if(symetryStroke) {
+          symetryStroke.pushPoint( draw2.convertPixelsToWorldSpaceUnits( { x: canvas.width - mouseHistory[i].x, y: mouseHistory[i].y } ) );
+        }
 			}
 			drawing.pushStroke( newStroke );
+      if (symetryStroke) {
+        drawing.pushStroke(symetryStroke);
+      }
 			break;
 		case TOOL_MODE_RECT_SELECT :
 			// complete a rectangle selection
