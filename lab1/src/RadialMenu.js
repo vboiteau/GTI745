@@ -1,8 +1,9 @@
 class RadialMenu {
     constructor() {
-        this.label = new Array(8).map(() => '');
-        this.isEnabled = new Array(8).map(() => true);
-        this.itemID = new Array(8).map((cell, i) => i);
+        this.label = new Array(8);
+        this.label = this.label.map(1);
+        this.isEnabled = new Array(8);
+        this.itemID = new Array(8);
 
         this.selectedItem = 0;
 
