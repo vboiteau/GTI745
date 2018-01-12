@@ -12,6 +12,7 @@ Right: radial menu&nbsp; &nbsp; Shift+Right: control menu<br>
 </canvas>
 <p>
 <label><input id="TOOL_MODE_PENCIL" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_PENCIL);" checked="">Pencil</label>
+<label><input id="TOOL_MODE_LINE" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_LINE);">Line</label>
 <label><input id="TOOL_MODE_RECT_SELECT" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_RECT_SELECT);">Rectangle Select</label>
 <label><input id="TOOL_MODE_MOVE_SELECTION" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_MOVE_SELECTION);">Move Selection</label>
 </p>
@@ -520,6 +521,7 @@ Draw2.prototype = {
 			x2 = this.convertWorldSpaceUnitsToPixelsX( x2 );
 			y2 = this.convertWorldSpaceUnitsToPixelsY( y2 );
 		}
+    console.log(x1, y1, x2, y2);
 		this.canvas_context.beginPath();
 		this.canvas_context.moveTo(x1,y1);
 		this.canvas_context.lineTo(x2,y2);
@@ -1128,7 +1130,8 @@ var drawSymetry = false;
 var TOOL_MODE_PENCIL = 0;
 var TOOL_MODE_RECT_SELECT = 1;
 var TOOL_MODE_MOVE_SELECTION = 2;
-var NUM_TOOL_MODES = 3;
+var TOOL_MODE_LINE = 3;
+var NUM_TOOL_MODES = 4;
 var currentToolMode = TOOL_MODE_PENCIL;
 
 const DRAG_MODE_NONE = 0;
@@ -1143,11 +1146,13 @@ const CONTROL_RECT_SELECT = 2;
 const CONTROL_MOVE_SELECTION = 3;
 const CONTROL_TRANSLATE = 4;
 const CONTROL_ZOOM = 5;
+const CONTROL_LINE = 6;
 
 radialMenu.setItemLabelAndID( RadialMenu.CENTRAL_ITEM, "", -1 );
 radialMenu.setItemLabelAndID( RadialMenu.NORTH, "Pencil",           TOOL_MODE_PENCIL );
 radialMenu.setItemLabelAndID( RadialMenu.EAST,  "Rectangle Select", TOOL_MODE_RECT_SELECT );
 radialMenu.setItemLabelAndID( RadialMenu.WEST,  "Move Selection",   TOOL_MODE_MOVE_SELECTION );
+radialMenu.setItemLabelAndID( RadialMenu.SOUTH,  "Line",   TOOL_MODE_LINE );
 
 controlMenu.setItemLabelAndID( RadialMenu.CENTRAL_ITEM, "", -1 );
 controlMenu.setItemLabelAndID( RadialMenu.NORTH, "Pencil", CONTROL_PENCIL );
@@ -1155,6 +1160,7 @@ controlMenu.setItemLabelAndID( RadialMenu.EAST, "Rectangle Select", CONTROL_RECT
 controlMenu.setItemLabelAndID( RadialMenu.WEST, "Move Selection", CONTROL_MOVE_SELECTION );
 controlMenu.setItemLabelAndID( RadialMenu.SOUTH_EAST, "Translate", CONTROL_TRANSLATE );
 controlMenu.setItemLabelAndID( RadialMenu.SOUTH_WEST, "Zoom", CONTROL_ZOOM );
+controlMenu.setItemLabelAndID( RadialMenu.SOUTH,  "Line",   CONTROL_LINE );
 
 
 var redraw = function() {
@@ -1184,6 +1190,11 @@ var redraw = function() {
         draw2.drawPolyline( mouseHistory.map(({x, y}) => ({ x: canvas.width - x, y })) );
       }
 			break;
+    case TOOL_MODE_LINE :
+      console.log('why failing');
+      draw2.setStrokeColor(0, 0, 0);
+      draw2.drawLine(mouseHistory[0].x, mouseHistory[0].y, mouseHistory[mouseHistory.length - 1].x,  mouseHistory[mouseHistory.length - 1].y);
+      break;
 		case TOOL_MODE_RECT_SELECT :
 			draw2.setFillColor( 255, 128, 0, 0.3 ); // transparent orange
 			draw2.fillRect( drag_start_x, drag_start_y, mouse_x - drag_start_x, mouse_y - drag_start_y );
@@ -1270,6 +1281,7 @@ function mouseUpHandler(e) {
 		var returnValue = radialMenu.releaseEvent( mouse_x, mouse_y );
 
 		var itemID = radialMenu.getIDOfSelection();
+    console.log(itemID);
 		if ( 0 <= itemID && itemID < NUM_TOOL_MODES ) {
 			setToolMode(itemID,true);
 		}
@@ -1303,6 +1315,12 @@ function mouseUpHandler(e) {
         drawing.pushStroke(symetryStroke);
       }
 			break;
+    case TOOL_MODE_LINE:
+      newStroke = new Stroke();
+      newStroke.pushPoint(draw2.convertPixelsToWorldSpaceUnits(mouseHistory[0]));
+      newStroke.pushPoint(draw2.convertPixelsToWorldSpaceUnits(mouseHistory[mouseHistory.length - 1]));
+      drawing.pushStroke(newStroke);
+      break;
 		case TOOL_MODE_RECT_SELECT :
 			// complete a rectangle selection
 			var selectedRectangle = new Box2(
@@ -1345,8 +1363,8 @@ function mouseMoveHandler(e) {
 			// use the drag event to change the appropriate parameter
 			switch ( controlMenu.getIDOfSelection() ) {
 			case CONTROL_PENCIL :
-				break;
 			case CONTROL_RECT_SELECT :
+      case CONTROL_LINE :
 				break;
 			case CONTROL_MOVE_SELECTION :
 				var v = Vec2.diff(
@@ -1383,6 +1401,7 @@ function mouseMoveHandler(e) {
 	else if ( currentDragMode == DRAG_MODE_TOOL ) {
 		switch ( currentToolMode ) {
 		case TOOL_MODE_PENCIL :
+    case TOOL_MODE_LINE :
 			mouseHistory.push( new Vec2( mouse_x, mouse_y ) );
 			break;
 		case TOOL_MODE_RECT_SELECT :
@@ -1419,6 +1438,9 @@ function setToolMode( toolMode, updateRadioButtons=false ) {
 		switch ( toolMode ) {
 		case TOOL_MODE_PENCIL :
 			idString = "TOOL_MODE_PENCIL";
+			break;
+		case TOOL_MODE_LINE :
+			idString = "TOOL_MODE_LINE";
 			break;
 		case TOOL_MODE_RECT_SELECT :
 			idString = "TOOL_MODE_RECT_SELECT";
