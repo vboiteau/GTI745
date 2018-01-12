@@ -16,6 +16,7 @@ Right: radial menu&nbsp; &nbsp; Shift+Right: control menu<br>
 <label><input id="TOOL_MODE_MOVE_SELECTION" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_MOVE_SELECTION);">Move Selection</label>
 <br>
 <button onclick="frameAllButtonHandler()">Frame All</button>
+<button onclick="duplicateSelectionHandler()">Duplicate Selection</button>
 <button onclick="deleteSelectionButtonHandler()">Delete Selection</button>
 <br><br>
 <button onclick="deleteAllButtonHandler()">Delete All</button>
@@ -1414,6 +1415,19 @@ function setToolMode( toolMode, updateRadioButtons=false ) {
 
 function frameAllButtonHandler() {
 	draw2.frame( drawing.getBoundingRectangle(), true );
+	redraw();
+}
+
+function duplicateSelectionHandler() {
+	for(var i = 0; i < selectedStrokes.length; i++){
+		var newStroke = new Stroke();
+		for(var j = 0; j < selectedStrokes[i].points.length; j++){
+			var newPoint = new Vec2();
+			newPoint.copy(selectedStrokes[i].points[j]);
+			newStroke.pushPoint(newPoint);
+		}
+		drawing.pushStroke(newStroke);
+	}
 	redraw();
 }
 
