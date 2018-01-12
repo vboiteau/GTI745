@@ -17,9 +17,10 @@ Right: radial menu&nbsp; &nbsp; Shift+Right: control menu<br>
 <br>
 <button onclick="frameAllButtonHandler()">Frame All</button>
 <button onclick="deleteSelectionButtonHandler()">Delete Selection</button>
+<button onclick="flipSelectionX()">Flip X</button>
+<button onclick="flipSelectionY()">Flip Y</button>
 <br><br>
 <button onclick="deleteAllButtonHandler()">Delete All</button>
-<br><br>
 <label><input type="checkbox" onclick="showMouseCoordinates = ! showMouseCoordinates;">Show mouse coordinates (debug info)</label>
 
 
@@ -1429,6 +1430,79 @@ function deleteSelectionButtonHandler() {
 
 	redraw();
 }
+
+function flipSelectionX(){
+
+	console.log("Flip X");
+
+
+}
+
+function flipSelectionY(){
+
+	console.log("Flip Y");
+
+	var bounds = getSelectedStrokesBounds();
+
+	var size = Math.abs(bounds.max.x - bounds.min.x);
+
+	var newStrokes = [];
+
+	selectedStrokes.forEach(stroke => {
+
+		var index = drawing.strokes.indexOf(stroke);
+
+		var newPoints = [];
+
+		stroke.points.forEach(point => {
+
+			newPoints.push(new Vec2(bounds.max.x - point.x + bounds.min.x, point.y))
+
+		});
+
+		var stroke = new Stroke();
+
+		stroke.points = newPoints;
+
+		newStrokes.push(stroke);
+
+		drawing.strokes[index] = stroke;
+
+	});
+
+	selectedStrokes = newStrokes;
+
+	redraw();
+
+}
+
+//Returns the coodinates of the top left and bottom right corner of the bounding rectangle
+//for selected strokes.
+//
+function getSelectedStrokesBounds(){
+
+	var minX = Number.MAX_VALUE;
+	var maxX = Number.MIN_VALUE;
+
+	var minY = Number.MAX_VALUE;
+	var maxY = Number.MIN_VALUE;
+
+	selectedStrokes.forEach(stroke => {
+
+		var bounds = stroke.boundingRectangle;
+
+		minX = bounds.min.x < minX ? bounds.min.x : minX;
+		maxX = bounds.max.x > maxX ? bounds.max.x : maxX;
+
+		minY = bounds.min.y < minY ? bounds.min.y : minY;
+		maxY = bounds.max.y > maxY ? bounds.max.y : maxY;
+
+	});
+
+	return new Box2(new Vec2(minX, minY), new Vec2(maxX, maxY))
+
+}
+
 function deleteAllButtonHandler() {
 	selectedStrokes = [];
 	// this should really be moved into a method in the Drawing prototype
@@ -1437,7 +1511,6 @@ function deleteAllButtonHandler() {
 
 	redraw();
 }
-
 
 </script>
 
