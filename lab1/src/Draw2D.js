@@ -234,8 +234,8 @@ class Draw2D {
             this.contextedDrawRect(
                 this.convertWorldSpaceUnitsToPixelsX(x),
                 this.convertWorldSpaceUnitsToPixelsY(y),
-                this.scaleFactorInWorldSpaceUnitsPerPixel,
-                this.scaleFactorInWorldSpaceUnitsPerPixel,
+                unsignedWidth / this.scaleFactorInWorldSpaceUnitsPerPixel,
+                unsignedHeight / this.scaleFactorInWorldSpaceUnitsPerPixel,
                 isFilled
             );
         } else {
