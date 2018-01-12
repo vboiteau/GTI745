@@ -21,6 +21,7 @@ Right: radial menu&nbsp; &nbsp; Shift+Right: control menu<br>
 
 </p>
 <button onclick="frameAllButtonHandler()">Frame All</button>
+<button onclick="duplicateSelectionHandler()">Duplicate Selection</button>
 <button onclick="deleteSelectionButtonHandler()">Delete Selection</button>
 <button onclick="flipSelectionX()">Flip X</button>
 <button onclick="flipSelectionY()">Flip Y</button>
@@ -1063,6 +1064,13 @@ Stroke.prototype = {
 	},
 	draw : function( draw2 ) {
 		draw2.drawPolyline(this.points);
+	},
+	copy : function(other) {
+		for(var i = 0; i < other.points.length; i++){
+			var newPoint = new Vec2();
+			newPoint.copy(other.points[i]);
+			this.pushPoint(newPoint);
+		}
 	}
 };
 
@@ -1472,6 +1480,15 @@ function setToolMode( toolMode, updateRadioButtons=false ) {
 
 function frameAllButtonHandler() {
 	draw2.frame( drawing.getBoundingRectangle(), true );
+	redraw();
+}
+
+function duplicateSelectionHandler() {
+	for(var i = 0; i < selectedStrokes.length; i++){
+		var newStroke = new Stroke();
+		newStroke.copy(selectedStrokes[i]);
+		drawing.pushStroke(newStroke);
+	}
 	redraw();
 }
 
