@@ -521,7 +521,6 @@ Draw2.prototype = {
 			x2 = this.convertWorldSpaceUnitsToPixelsX( x2 );
 			y2 = this.convertWorldSpaceUnitsToPixelsY( y2 );
 		}
-    console.log(x1, y1, x2, y2);
 		this.canvas_context.beginPath();
 		this.canvas_context.moveTo(x1,y1);
 		this.canvas_context.lineTo(x2,y2);
@@ -703,6 +702,14 @@ RadialMenu.prototype = {
 		}
 		return -1;
 	},
+
+  getItemIDForLabel : function(label) {
+    return this.itemID[this.getIndexOfLabel(label)];
+  },
+
+  getIndexOfLabel : function(query) {
+    return this.label.findIndex(label => label === query);
+  },
 
 	setEnabledByID : function( /*boolean*/ flag, id ) {
 		for (var i = 0; i <= RadialMenu.N; ++i) {
@@ -1185,13 +1192,11 @@ var redraw = function() {
 		case TOOL_MODE_PENCIL :
 			draw2.setStrokeColor( 0, 0, 0 ); // black
 			draw2.drawPolyline( mouseHistory );
-        console.dir(drawSymetry);
       if (drawSymetry) {
         draw2.drawPolyline( mouseHistory.map(({x, y}) => ({ x: canvas.width - x, y })) );
       }
 			break;
     case TOOL_MODE_LINE :
-      console.log('why failing');
       draw2.setStrokeColor(0, 0, 0);
       draw2.drawLine(mouseHistory[0].x, mouseHistory[0].y, mouseHistory[mouseHistory.length - 1].x,  mouseHistory[mouseHistory.length - 1].y);
       break;
@@ -1274,8 +1279,15 @@ function mouseUpHandler(e) {
 	//mouse_y = e.clientY - canvas_rectangle.top;
 	//console.log("mouse up");
 	if ( controlMenu.isVisible && e.button === BUTTON_RIGHT ) {
-		if ( controlMenu.releaseEvent( mouse_x, mouse_y ) )
-			redraw();
+		if ( controlMenu.releaseEvent( mouse_x, mouse_y ) ) {
+      const returnValue = controlMenu.releaseEvent(mouse_x, mouse_y);
+      const itemLabel = controlMenu.label[controlMenu.getSelection()];
+      const itemID = radialMenu.getItemIDForLabel(itemLabel);
+      if (itemID) {
+        setToolMode(itemID, true);
+      }
+      redraw();
+    }
 	}
 	else if ( radialMenu.isVisible && e.button === BUTTON_RIGHT ) {
 		var returnValue = radialMenu.releaseEvent( mouse_x, mouse_y );
@@ -1365,6 +1377,7 @@ function mouseMoveHandler(e) {
 			case CONTROL_PENCIL :
 			case CONTROL_RECT_SELECT :
       case CONTROL_LINE :
+        console.log(controlMenu.label[controlMenu.getSelection()]);
 				break;
 			case CONTROL_MOVE_SELECTION :
 				var v = Vec2.diff(
@@ -1449,7 +1462,10 @@ function setToolMode( toolMode, updateRadioButtons=false ) {
 			idString = "TOOL_MODE_MOVE_SELECTION";
 			break;
 		}
-		document.getElementById(idString).checked = true;
+		const checkbox = document.getElementById(idString);
+    if (checkbox) {
+      checkbox.checked = true;
+    }
 	}
 }
 
