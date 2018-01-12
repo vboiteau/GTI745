@@ -1,0 +1,28 @@
+
+<!-- saved from url=(0093)http://www.michaelmcguffin.com/ets/gti745-2018h/lab1-SimpleDraw-JavaScript/SimpleDraw-js.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<style type="text/css">
+   label:hover, button:hover { background-color: #ffb080; color: #000000; }
+</style>
+<style></style></head>
+
+<body><br>
+Right: radial menu&nbsp; &nbsp; Shift+Right: control menu<br>
+<canvas id="myCanvas" width="600" height="500" style="border:2px solid #000000;">
+</canvas>
+<br>
+<label><input id="TOOL_MODE_PENCIL" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_PENCIL);" checked="">Pencil</label>
+<label><input id="TOOL_MODE_RECT_SELECT" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_RECT_SELECT);">Rectangle Select</label>
+<label><input id="TOOL_MODE_MOVE_SELECTION" type="radio" name="radio_mode" onclick="setToolMode(TOOL_MODE_MOVE_SELECTION);">Move Selection</label>
+<br>
+<button onclick="frameAllButtonHandler()">Frame All</button>
+<button onclick="deleteSelectionButtonHandler()">Delete Selection</button>
+<br><br>
+<button onclick="deleteAllButtonHandler()">Delete All</button>
+<br><br>
+<label><input type="checkbox" onclick="showMouseCoordinates = ! showMouseCoordinates;">Show mouse coordinates (debug info)</label>
+
+<script src="bundle.js"></script>
+
+<pre>
+Left: tool &nbsp; &nbsp; Shift+Left: translate &nbsp; &nbsp; Ctrl+Left: zoom</pre></body></html>

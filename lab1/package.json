@@ -1,0 +1,28 @@
+{
+  "name": "gti745-lab1",
+  "version": "0.0.0",
+  "description": "gti745 first lab",
+  "main": "g st",
+  "license": "MIT",
+  "dependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "webpack": "^3.10.0"
+  },
+  "scripts": {
+    "build": "webpack",
+    "lint": "eslint src",
+    "start": "browser-sync start --server 'dist' --files dist --no-open --no-notify",
+    "watch": "concurrently --kill-others \"webpack --watch\" \"npm start\""
+  },
+  "devDependencies": {
+    "browser-sync": "^2.23.5",
+    "concurrently": "^3.5.1",
+    "eslint": "^4.9.0",
+    "eslint-config-airbnb-base": "12.1.0",
+    "eslint-plugin-import": "^2.7.0",
+    "pre-commit": "^1.2.2"
+  }
+}

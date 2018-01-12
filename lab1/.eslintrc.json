@@ -1,0 +1,36 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "env": {
+    "es6":true,
+    "node":true
+  },
+  "extends": [
+    "airbnb-base"
+  ],
+  "globals": {
+    "document": false
+  },
+  "rules": { 
+    "indent": ["error", 4, {
+      "SwitchCase":1
+    }],
+    "comma-dangle":["error","never"],
+    "arrow-parens":["error","as-needed"],
+    "no-param-reassign": ["error", {"props":false}],
+    "no-mixed-operators": 0,
+    "no-unused-vars": [
+      "error",
+      {
+        "varsIgnorePattern": "logger"
+      }
+    ],
+    "no-underscore-dangle": "off",
+    "no-console": "off"
+  } 
+}
