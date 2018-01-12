@@ -1,9 +1,14 @@
 class RadialMenu {
     constructor() {
-        this.label = new Array(8);
-        this.label = this.label.map(1);
-        this.isEnabled = new Array(8);
-        this.itemID = new Array(8);
+        this.label = [];
+        this.isEnabled = [];
+        this.itemID = [];
+
+        for (let i = 0, len = RadialMenu.N; i < len; i++) {
+            this.label[i] = '';
+            this.isEnabled[i] = true;
+            this.itemID[i] = i;
+        }
 
         this.selectedItem = 0;
 
@@ -282,7 +287,8 @@ class RadialMenu {
                 let x = ((i % 2) === 1 ? radius : radiusPrime) * Math.cos(theta) + this.x0;
                 let y = ((i % 2) === 1 ? radius : radiusPrime) * Math.sin(theta) + this.y0;
 
-                if (i === 1 && this.label[2].length === 0 && this.label[8].length === 0) {
+                console.log(this.label);
+                if (i === 1 && this.label[2].length === 0 && this.label[7].length === 0) {
                     y = -radius / 2 + this.y0;
                 } else if (i === 5 && this.label[4].length === 0 && this.label[6].length === 0) {
                     y = radius / 2 + this.y0;
