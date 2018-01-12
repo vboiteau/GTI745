@@ -1492,6 +1492,37 @@ function flipSelectionX(){
 
 	console.log("Flip X");
 
+	var bounds = getSelectedStrokesBounds();
+
+	var size = Math.abs(bounds.max.y - bounds.min.y);
+
+	var newStrokes = [];
+
+	selectedStrokes.forEach(stroke => {
+
+		var index = drawing.strokes.indexOf(stroke);
+
+		var newPoints = [];
+
+		stroke.points.forEach(point => {
+
+			newPoints.push(new Vec2(point.x, bounds.max.y - point.y + bounds.min.y))
+
+		});
+
+		var stroke = new Stroke();
+
+		stroke.points = newPoints;
+
+		newStrokes.push(stroke);
+
+		drawing.strokes[index] = stroke;
+
+	});
+
+	selectedStrokes = newStrokes;
+
+	redraw();
 
 }
 
