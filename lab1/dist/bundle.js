@@ -74,359 +74,15 @@ var _Vector2D = __webpack_require__(1);
 
 var _Vector2D2 = _interopRequireDefault(_Vector2D);
 
+var _Box2D = __webpack_require__(3);
+
+var _Box2D2 = _interopRequireDefault(_Box2D);
+
+var _Draw2D = __webpack_require__(2);
+
+var _Draw2D2 = _interopRequireDefault(_Draw2D);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// ============================================================
-// Box2 objects are for storing 2D axis-aligned rectangles.
-// To create a new instance, use the new keyword:
-//    var box_a = new Box2();
-//    var box_b = new Box2(new Vector2D(-10,-10),new Vector2D(10,10));
-// ============================================================
-
-function Box2() {
-    var vec2_min = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-    var vec2_max = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-    // Internally, the min and max points are diagonally opposite,
-    // and are only valid if isEmpty===false.
-    // Below, we initialize things based on what the client passed in.
-
-    this.isEmpty = true;
-    this.min = new _Vector2D2.default();
-    this.max = new _Vector2D2.default();
-    if (vec2_min !== null && vec2_max !== null) {
-        this.boundPoint(vec2_min);
-        this.boundPoint(vec2_max);
-    }
-}
-
-Box2.prototype = {
-    clear: function clear() {
-        this.isEmpty = true;this.min = new _Vector2D2.default();this.max = new _Vector2D2.default();
-    },
-    center: function center() {
-        return _Vector2D2.default.average(this.min, this.max);
-    },
-    diagonal: function diagonal() {
-        return _Vector2D2.default.diff(this.max, this.min);
-    },
-    width: function width() {
-        return this.max.x - this.min.x;
-    },
-    height: function height() {
-        return this.max.y - this.min.y;
-    },
-    containsPoint: function containsPoint(q) {
-        return !(this.isEmpty || q.x < this.min.x || q.x > this.max.x || q.y < this.min.y || q.y > this.max.y);
-    },
-    containsBox: function containsBox(b) {
-        if (this.isEmpty) return false;
-        if (b.isEmpty) return true;
-        return this.min.x <= b.min.x && b.max.x <= this.max.x && this.min.y <= b.min.y && b.max.y <= this.max.y;
-    },
-
-
-    // Enlarges the box enough to contain the given point
-    boundPoint: function boundPoint(vec2) {
-        if (this.isEmpty) {
-            this.isEmpty = false;
-            this.min.copy(vec2);
-            this.max.copy(vec2);
-        } else {
-            if (vec2.x < this.min.x) this.min.x = vec2.x;else if (vec2.x > this.max.x) this.max.x = vec2.x;
-
-            if (vec2.y < this.min.y) this.min.y = vec2.y;else if (vec2.y > this.max.y) this.max.y = vec2.y;
-        }
-    },
-    boundPoints: function boundPoints(points) {
-        for (var i = 0; i < points.length; ++i) {
-            this.boundPoint(points[i]);
-        }
-    },
-
-
-    // Enlarges the box enough to contain the given box
-    boundBox: function boundBox(box) {
-        if (!box.isEmpty) {
-            this.boundPoint(box.min);
-            this.boundPoint(box.max);
-        }
-    }
-};
-
-// ============================================================
-// Draw2 objects are for managing the transformation between
-// pixel space and a 2D world space, allowing a client to pan and zoom.
-// The objects also manage the drawing of simple shapes on a canvas,
-// allowing a client to pass in coordinates in either space
-// (pixel space or world space).
-// To create a new instance, use the new keyword:
-//    var draw2 = new Draw2(canvas);
-// ============================================================
-
-function Draw2(canvas) {
-    this.canvas = canvas;
-    this.canvas_context = canvas.getContext('2d');
-    this.canvasWidth_pixels = canvas.width;
-    this.canvasHeight_pixels = canvas.height;
-    this.offsetX_pixels = 0;
-    this.offsetY_pixels = 0;
-    this.scaleFactorInWorldSpaceUnitsPerPixel = 1.0; // greater if user is more zoomed out
-    this.setFont(this.canvas_context.font);
-    this.coordinateSystem = Draw2.PIXELS;
-}
-
-// static constants
-Draw2.PIXELS = 'pixels';
-Draw2.WORLD = 'world';
-
-Draw2.prototype = {
-    setFont: function setFont(fontName /* Example: 'italic 27px Calibri' */) {
-        this.canvas_context.font = fontName;
-        this.fontHeight = parseInt(this.canvas_context.font.match(/\d+/)[0], 10);
-    },
-    setFontHeight: function setFontHeight(fontHeight /* in pixels */) {
-        this.canvas_context.font = fontHeight.toString() + 'px sans-serif';
-        this.fontHeight = parseInt(this.canvas_context.font.match(/\d+/)[0], 10);
-    },
-    convertPixelsToWorldSpaceUnitsX: function convertPixelsToWorldSpaceUnitsX(x_pixels) {
-        return (x_pixels - this.offsetX_pixels) * this.scaleFactorInWorldSpaceUnitsPerPixel;
-    },
-    convertPixelsToWorldSpaceUnitsY: function convertPixelsToWorldSpaceUnitsY(y_pixels) {
-        return (y_pixels - this.offsetY_pixels) * this.scaleFactorInWorldSpaceUnitsPerPixel;
-    },
-    convertPixelsToWorldSpaceUnits: function convertPixelsToWorldSpaceUnits(p_pixels) {
-        return new _Vector2D2.default((p_pixels.x - this.offsetX_pixels) * this.scaleFactorInWorldSpaceUnitsPerPixel, (p_pixels.y - this.offsetY_pixels) * this.scaleFactorInWorldSpaceUnitsPerPixel);
-    },
-    convertWorldSpaceUnitsToPixelsX: function convertWorldSpaceUnitsToPixelsX(x_world) {
-        return x_world / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetX_pixels;
-    },
-    convertWorldSpaceUnitsToPixelsY: function convertWorldSpaceUnitsToPixelsY(y_world) {
-        return y_world / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetY_pixels;
-    },
-    convertWorldSpaceUnitsToPixels: function convertWorldSpaceUnitsToPixels(p_world) {
-        return new _Vector2D2.default(p_world.x / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetX_pixels, p_world.y / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetY_pixels);
-    },
-
-
-    // This is for translating, also called scrolling or panning
-    translate: function translate(deltaX_pixels, deltaY_pixels) {
-        this.offsetX_pixels += deltaX_pixels;
-        this.offsetY_pixels += deltaY_pixels;
-    },
-    zoomIn: function zoomIn(zoomFactor, // greater than 1 to zoom in, between 0 and 1 to zoom out
-    centerX_pixels, centerY_pixels) {
-        this.scaleFactorInWorldSpaceUnitsPerPixel /= zoomFactor;
-        this.offsetX_pixels = centerX_pixels - (centerX_pixels - this.offsetX_pixels) * zoomFactor;
-        this.offsetY_pixels = centerY_pixels - (centerY_pixels - this.offsetY_pixels) * zoomFactor;
-    },
-    zoomInAroundCenterOfCanvas: function zoomInAroundCenterOfCanvas(zoomFactor // greater than 1 to zoom in, between 0 and 1 to zoom out
-    ) {
-        this.zoomIn(zoomFactor, this.canvasWidth_pixels * 0.5, this.canvasHeight_pixels * 0.5);
-    },
-
-
-    // This can be used to implement bimanual (2-handed) camera control,
-    // or 2-finger camera control, as in a "pinch" gesture
-    translateAndZoomBasedOnDisplacementOfTwoFingers: function translateAndZoomBasedOnDisplacementOfTwoFingers(
-    // these are instances of Vector2D in pixel coordinates
-    A_old, B_old, A_new, B_new) {
-        // Compute midpoints of each pair of points
-        var M1 = _Vector2D2.default.average(A_old, B_old);
-        var M2 = _Vector2D2.default.average(A_new, B_new);
-
-        // This is the translation that the world should appear to undergo.
-        var translation = _Vector2D2.default.diff(M2, M1);
-
-        // Compute a vector associated with each pair of points.
-        var v1 = _Vector2D2.default.diff(A_old, B_old);
-        var v2 = _Vector2D2.default.diff(A_new, B_new);
-
-        var v1_length = v1.norm();
-        var v2_length = v2.norm();
-        var scaleFactor = 1;
-        if (v1_length > 0 && v2_length > 0) {
-            scaleFactor = v2_length / v1_length;
-        }
-        this.translate(translation.x, translation.y);
-        this.zoomIn(scaleFactor, M2.x, M2.y);
-    },
-
-
-    // Causes the zoom and translation to be adjusted to fit the given rectangle within the canvas
-    frame: function frame(rect, // an instance of Box2; the rectangle (in world space) to frame
-    expand // true if caller wants a margin of whitespace added around the rect
-    ) {
-        if (rect.isEmpty || rect.diagonal().x === 0 || rect.diagonal().y === 0) {
-            return;
-        }
-        if (expand) {
-            var diagonal = rect.diagonal().norm() / 20;
-            var v = new _Vector2D2.default(diagonal, diagonal);
-            rect = new Box2(_Vector2D2.default.diff(rect.min, v), _Vector2D2.default.sum(rect.max, v));
-        }
-        if (rect.width() / rect.height() >= this.canvasWidth_pixels / this.canvasHeight_pixels) {
-            // The rectangle to frame is wider (or shorter) than the canvas,
-            // so the limiting factor is the width of the rectangle.
-            this.offsetX_pixels = -rect.min.x * this.canvasWidth_pixels / rect.width();
-            this.scaleFactorInWorldSpaceUnitsPerPixel = rect.width() / this.canvasWidth_pixels;
-            this.offsetY_pixels = this.canvasHeight_pixels / 2 - rect.center().y / this.scaleFactorInWorldSpaceUnitsPerPixel;
-        } else {
-            // The limiting factor is the height of the rectangle.
-            this.offsetY_pixels = -rect.min.y * this.canvasHeight_pixels / rect.height();
-            this.scaleFactorInWorldSpaceUnitsPerPixel = rect.height() / this.canvasHeight_pixels;
-            this.offsetX_pixels = this.canvasWidth_pixels / 2 - rect.center().x / this.scaleFactorInWorldSpaceUnitsPerPixel;
-        }
-    },
-    resize: function resize(w, h // the new canvas dimensions, in pixels
-    ) {
-        var oldCenter = this.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(this.canvasWidth_pixels * 0.5, this.canvasHeight_pixels * 0.5));
-        var radius = Math.min(this.canvasWidth_pixels, this.canvasHeight_pixels) * 0.5 * this.scaleFactorInWorldSpaceUnitsPerPixel;
-
-        this.canvasWidth_pixels = w;
-        this.canvasHeight_pixels = h;
-
-        if (radius > 0) {
-            this.frame(new Box2(new _Vector2D2.default(oldCenter.x - radius, oldCenter.y - radius), new _Vector2D2.default(oldCenter.x + radius, oldCenter.y + radius)), false);
-        }
-    },
-    setCoordinateSystemToPixels: function setCoordinateSystemToPixels() {
-        this.coordinateSystem = Draw2.PIXELS;
-    },
-    setCoordinateSystemToWorldSpaceUnits: function setCoordinateSystemToWorldSpaceUnits() {
-        this.coordinateSystem = Draw2.WORLD;
-    },
-    setStrokeColor: function setStrokeColor(red, green, blue) // between 0.0 and 1.0
-    {
-        var alpha = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1.0;
-
-        if (alpha === 1.0) {
-            this.canvas_context.strokeStyle = 'rgb(' + red + ',' + green + ',' + blue + ')';
-        } else {
-            this.canvas_context.strokeStyle = 'rgba(' + red + ',' + green + ',' + blue + ',' + alpha + ')';
-        }
-    },
-    setFillColor: function setFillColor(red, green, blue) // between 0.0 and 1.0
-    {
-        var alpha = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1.0;
-
-        if (alpha === 1.0) {
-            this.canvas_context.fillStyle = 'rgb(' + red + ',' + green + ',' + blue + ')';
-        } else {
-            this.canvas_context.fillStyle = 'rgba(' + red + ',' + green + ',' + blue + ',' + alpha + ')';
-        }
-    },
-    setLineWidth: function setLineWidth(lw) {
-        this.canvas_context.lineWidth = lw;
-    },
-    clear: function clear(red, green, blue // between 0 and 255
-    ) {
-        this.setFillColor(red, green, blue);
-        this.canvas_context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    },
-    drawLine: function drawLine(x1, y1, x2, y2) {
-        if (this.coordinateSystem === Draw2.WORLD) {
-            x1 = this.convertWorldSpaceUnitsToPixelsX(x1);
-            y1 = this.convertWorldSpaceUnitsToPixelsY(y1);
-            x2 = this.convertWorldSpaceUnitsToPixelsX(x2);
-            y2 = this.convertWorldSpaceUnitsToPixelsY(y2);
-        }
-        this.canvas_context.beginPath();
-        this.canvas_context.moveTo(x1, y1);
-        this.canvas_context.lineTo(x2, y2);
-        this.canvas_context.stroke();
-    },
-    drawRect: function drawRect(x, y, w, h) {
-        var isFilled = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
-
-        if (w < 0) {
-            w = -w;
-            x -= w;
-        }
-        if (h < 0) {
-            h = -h;
-            y -= h;
-        }
-        if (this.coordinateSystem === Draw2.WORLD) {
-            x = this.convertWorldSpaceUnitsToPixelsX(x);
-            y = this.convertWorldSpaceUnitsToPixelsY(y);
-            w /= this.scaleFactorInWorldSpaceUnitsPerPixel;
-            h /= this.scaleFactorInWorldSpaceUnitsPerPixel;
-        }
-        if (isFilled) this.canvas_context.fillRect(x, y, w, h);else this.canvas_context.strokeRect(x, y, w, h);
-    },
-    fillRect: function fillRect(x, y, w, h) {
-        this.drawRect(x, y, w, h, true);
-    },
-    drawCircle: function drawCircle(x_center, y_center, radius) {
-        var isFilled = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-
-        if (this.coordinateSystem === Draw2.WORLD) {
-            x_center = this.convertWorldSpaceUnitsToPixelsX(x_center);
-            y_center = this.convertWorldSpaceUnitsToPixelsY(y_center);
-            radius /= this.scaleFactorInWorldSpaceUnitsPerPixel;
-        }
-        this.canvas_context.beginPath();
-        this.canvas_context.arc(x_center, y_center, radius, 0, 2 * Math.PI, false);
-        if (isFilled) this.canvas_context.fill();else this.canvas_context.stroke();
-    },
-    fillCircle: function fillCircle(x_center, y_center, radius) {
-        this.drawCircle(x_center, y_center, radius, true);
-    },
-    drawPolyline: function drawPolyline(points) {
-        var isFilled = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-        var isClosed = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
-        if (points.length <= 1) {
-            return;
-        }
-        var x = void 0;
-        var y = void 0;
-        this.canvas_context.beginPath();
-        x = points[0].x;
-        y = points[0].y;
-        if (this.coordinateSystem === Draw2.WORLD) {
-            x = this.convertWorldSpaceUnitsToPixelsX(x);
-            y = this.convertWorldSpaceUnitsToPixelsY(y);
-        }
-        this.canvas_context.moveTo(x, y);
-        for (var i = 1; i < points.length; ++i) {
-            x = points[i].x;
-            y = points[i].y;
-            if (this.coordinateSystem === Draw2.WORLD) {
-                x = this.convertWorldSpaceUnitsToPixelsX(x);
-                y = this.convertWorldSpaceUnitsToPixelsY(y);
-            }
-            this.canvas_context.lineTo(x, y);
-        }
-        if (isClosed) this.canvas_context.closePath();
-        if (isFilled) this.canvas_context.fill();else this.canvas_context.stroke();
-    },
-    drawPolygon: function drawPolygon(points) {
-        var isFilled = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-        this.drawPolyline(points, isFilled, true);
-    },
-    fillPolygon: function fillPolygon(points) {
-        this.drawPolyline(points, true, true);
-    },
-
-
-    // returns the width of a string, in pixels
-    stringWidth: function stringWidth(s) {
-        if (s.length === 0) return 0;
-        return this.canvas_context.measureText(s).width;
-    },
-
-
-    // draws the given string using the current fill color
-    drawString: function drawString(x, y, // left extremity of the baseline of the string (near the lower-left corner of the string)
-    s // the string
-    ) {
-        if (s.length === 0) return;
-        this.canvas_context.fillText(s, x, y);
-    }
-};
 
 // ============================================================
 // A radial popup menu.
@@ -467,8 +123,8 @@ function RadialMenu() {
     this.y0 = 0;
 
     // pixel coordinates of current mouse position
-    this.mouse_x = 0;
-    this.mouse_y = 0;
+    this.mouseX = 0;
+    this.mouseY = 0;
 
     this.isVisible = false;
 }
@@ -487,14 +143,10 @@ RadialMenu.SOUTH_WEST = 6;
 RadialMenu.WEST = 7;
 RadialMenu.NORTH_WEST = 8;
 RadialMenu.N = 8;
-
-// colors (shades of gray)
-RadialMenu.FOREGROUND_1 = 0; // foreground 1 is black
-RadialMenu.FOREGROUND_2 = 127; // foreground 2 is 50% gray
-RadialMenu.BACKGROUND = 255; // background is white
+RadialMenu.FOREGROUND_1 = 0;
+RadialMenu.FOREGROUND_2 = 127;
+RadialMenu.BACKGROUND = 255;
 RadialMenu.MENU_ALPHA = 0.6;
-
-// These are in pixels.
 RadialMenu.radiusOfNeutralZone = 10;
 RadialMenu.textHeight = 20;
 RadialMenu.marginAroundText = 6;
@@ -547,8 +199,8 @@ RadialMenu.prototype = {
 
     // The below methods, that handle mouse events, return true if the client should redraw.
     pressEvent: function pressEvent(x, y) {
-        this.x0 = this.mouse_x = x;
-        this.y0 = this.mouse_y = y;
+        this.x0 = this.mouseX = x;
+        this.y0 = this.mouseY = y;
         this.selectedItem = RadialMenu.CENTRAL_ITEM;
         this.isVisible = true;
         return true;
@@ -565,8 +217,8 @@ RadialMenu.prototype = {
             return false;
         }
         // make the center of the menu follow the cursor
-        this.x0 = this.mouse_x = x;
-        this.y0 = this.mouse_y = y;
+        this.x0 = this.mouseX = x;
+        this.y0 = this.mouseY = y;
         return true;
     },
     dragEvent: function dragEvent(x, y) {
@@ -574,10 +226,10 @@ RadialMenu.prototype = {
             return false;
         }
 
-        this.mouse_x = x;
-        this.mouse_y = y;
-        var dx = this.mouse_x - this.x0;
-        var dy = this.mouse_y - this.y0;
+        this.mouseX = x;
+        this.mouseY = y;
+        var dx = this.mouseX - this.x0;
+        var dy = this.mouseY - this.y0;
         var radius = Math.sqrt(dx * dx + dy * dy);
 
         var newlySelectedItem = RadialMenu.CENTRAL_ITEM;
@@ -823,7 +475,7 @@ ControlMenu.menuRadius = RadialMenu.radiusOfNeutralZone * 6;
 function Stroke() {
     this.points = []; // these points are in world space
 
-    this.boundingRectangle = new Box2();
+    this.boundingRectangle = new _Box2D2.default();
     this.isBoundingRectangleDirty = true;
 }
 Stroke.prototype = {
@@ -839,7 +491,7 @@ Stroke.prototype = {
         }
         return this.boundingRectangle;
     },
-    isContainedInRectangle: function isContainedInRectangle(rectangle /* an instance of Box2 */) {
+    isContainedInRectangle: function isContainedInRectangle(rectangle /* an instance of Box2D */) {
         return rectangle.containsBox(this.getBoundingRectangle());
     },
     isContainedInLassoPolygon: function isContainedInLassoPolygon(polygonPoints /* an array of Vector2D in world space */) {
@@ -862,10 +514,10 @@ Stroke.prototype = {
         var cosine = Math.cos(angle);
         for (var i = 0; i < this.points.length; ++i) {
             var p = this.points[i];
-            var delta_x = p.x - center.x;
-            var delta_y = p.y - center.y;
-            var new_x = center.x + delta_x * cosine - delta_y * sine;
-            var new_y = center.y + delta_x * sine + delta_y * cosine;
+            var deltaX = p.x - center.x;
+            var deltaY = p.y - center.y;
+            var new_x = center.x + deltaX * cosine - deltaY * sine;
+            var new_y = center.y + deltaX * sine + deltaY * cosine;
             p.x = new_x;
             p.y = new_y;
         }
@@ -885,7 +537,7 @@ Stroke.prototype = {
 function Drawing() {
     this.strokes = [];
 
-    this.boundingRectangle = new Box2();
+    this.boundingRectangle = new _Box2D2.default();
     this.isBoundingRectangleDirty = true;
 }
 Drawing.prototype = {
@@ -922,7 +574,7 @@ Drawing.prototype = {
 
 var canvas = document.getElementById('myCanvas');
 // var canvas_context = canvas.getContext("2d");
-var draw2 = new Draw2(canvas);
+var draw2 = new _Draw2D2.default(canvas);
 var drawing = new Drawing();
 
 var radialMenu = new RadialMenu();
@@ -931,17 +583,17 @@ var controlMenu = new ControlMenu();
 // stores a subset of the strokes
 var selectedStrokes = []; // an array of instances of Stroke
 
-var mouse_x = void 0,
-    mouse_y = void 0,
-    previous_mouse_x = void 0,
-    previous_mouse_y = void 0,
+var mouseX = void 0,
+    mouseY = void 0,
+    previousMouseX = void 0,
+    previousMouseY = void 0,
     drag_start_x = void 0,
     drag_start_y = void 0;
 var mouseHistory = []; // array of Vector2D in pixel space
 
 var zoomFactorPerPixelDragged = 1.005;
 
-var showMouseCoordinates = false;
+window.showMouseCoordinates = false;
 
 // The below tool modes are constants,
 // but are defined using var instead of const
@@ -1004,9 +656,9 @@ var redraw = function redraw() {
                 break;
             case TOOL_MODE_RECT_SELECT:
                 draw2.setFillColor(255, 128, 0, 0.3); // transparent orange
-                draw2.fillRect(drag_start_x, drag_start_y, mouse_x - drag_start_x, mouse_y - drag_start_y);
+                draw2.fillRect(drag_start_x, drag_start_y, mouseX - drag_start_x, mouseY - drag_start_y);
                 draw2.setStrokeColor(255, 0, 0); // red
-                draw2.drawRect(drag_start_x, drag_start_y, mouse_x - drag_start_x, mouse_y - drag_start_y);
+                draw2.drawRect(drag_start_x, drag_start_y, mouseX - drag_start_x, mouseY - drag_start_y);
                 break;
             case TOOL_MODE_MOVE_SELECTION:
                 break;
@@ -1022,9 +674,9 @@ var redraw = function redraw() {
 
     if (showMouseCoordinates) {
         draw2.setFillColor(0, 0, 0);
-        var x_world = draw2.convertPixelsToWorldSpaceUnitsX(mouse_x);
-        var y_world = draw2.convertPixelsToWorldSpaceUnitsY(mouse_y);
-        draw2.drawString(20, canvas.height - 20, 'pixels:(' + mouse_x + ', ' + mouse_y + ')   world:(' + parseFloat(x_world).toFixed(2) + ', ' + parseFloat(y_world).toFixed(2) + ')');
+        var x_world = draw2.convertPixelsToWorldSpaceUnitsX(mouseX);
+        var y_world = draw2.convertPixelsToWorldSpaceUnitsY(mouseY);
+        draw2.drawString(20, canvas.height - 20, 'pixels:(' + mouseX + ', ' + mouseY + ')   world:(' + parseFloat(x_world).toFixed(2) + ', ' + parseFloat(y_world).toFixed(2) + ')');
     }
 };
 
@@ -1039,12 +691,12 @@ var BUTTONS_BIT_LEFT = 1;
 var BUTTONS_BIT_MIDDLE = 4;
 var BUTTONS_BIT_RIGHT = 2;
 
-function mouseDownHandler(e) {
+window.mouseDownHandler = function (e) {
     var canvas_rectangle = canvas.getBoundingClientRect();
-    mouse_x = e.clientX - canvas_rectangle.left;
-    mouse_y = e.clientY - canvas_rectangle.top;
+    mouseX = e.clientX - canvas_rectangle.left;
+    mouseY = e.clientY - canvas_rectangle.top;
     // console.log("mouse down");
-    // console.log("   " + mouse_x + "," + mouse_y);
+    // console.log("   " + mouseX + "," + mouseY);
 
     if (currentDragMode !== DRAG_MODE_NONE)
         // The user is already dragging with a previously pressed button,
@@ -1053,15 +705,15 @@ function mouseDownHandler(e) {
             return;
         }
 
-    drag_start_x = previous_mouse_x = mouse_x;
-    drag_start_y = previous_mouse_y = mouse_y;
+    drag_start_x = previousMouseX = mouseX;
+    drag_start_y = previousMouseY = mouseY;
 
     if (controlMenu.isVisible || e.button === BUTTON_RIGHT && e.shiftKey) {
-        if (controlMenu.pressEvent(mouse_x, mouse_y)) {
+        if (controlMenu.pressEvent(mouseX, mouseY)) {
             redraw();
         }
     } else if (radialMenu.isVisible || e.button === BUTTON_RIGHT) {
-        if (radialMenu.pressEvent(mouse_x, mouse_y)) {
+        if (radialMenu.pressEvent(mouseX, mouseY)) {
             redraw();
         }
     } else if (e.button === BUTTON_LEFT && e.shiftKey) {
@@ -1070,23 +722,23 @@ function mouseDownHandler(e) {
         currentDragMode = DRAG_MODE_ZOOM;
     } else if (e.button === BUTTON_LEFT) {
         mouseHistory = [];
-        mouseHistory.push(new _Vector2D2.default(mouse_x, mouse_y));
+        mouseHistory.push(new _Vector2D2.default(mouseX, mouseY));
         currentDragMode = DRAG_MODE_TOOL;
     }
-}
+};
 
-function mouseUpHandler(e) {
+window.mouseUpHandler = function (e) {
     var i = void 0;
     // var canvas_rectangle = canvas.getBoundingClientRect();
-    // mouse_x = e.clientX - canvas_rectangle.left;
-    // mouse_y = e.clientY - canvas_rectangle.top;
+    // mouseX = e.clientX - canvas_rectangle.left;
+    // mouseY = e.clientY - canvas_rectangle.top;
     // console.log("mouse up");
     if (controlMenu.isVisible && e.button === BUTTON_RIGHT) {
-        if (controlMenu.releaseEvent(mouse_x, mouse_y)) {
+        if (controlMenu.releaseEvent(mouseX, mouseY)) {
             redraw();
         }
     } else if (radialMenu.isVisible && e.button === BUTTON_RIGHT) {
-        var returnValue = radialMenu.releaseEvent(mouse_x, mouse_y);
+        var returnValue = radialMenu.releaseEvent(mouseX, mouseY);
 
         var itemID = radialMenu.getIDOfSelection();
         if (itemID >= 0 && itemID < NUM_TOOL_MODES) {
@@ -1112,7 +764,7 @@ function mouseUpHandler(e) {
                 break;
             case TOOL_MODE_RECT_SELECT:
                 // complete a rectangle selection
-                var selectedRectangle = new Box2(draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(drag_start_x, drag_start_y)), draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(mouse_x, mouse_y)));
+                var selectedRectangle = new _Box2D2.default(draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(drag_start_x, drag_start_y)), draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(mouseX, mouseY)));
                 selectedStrokes = [];
                 for (i = 0; i < drawing.strokes.length; ++i) {
                     var s = drawing.strokes[i];
@@ -1127,21 +779,21 @@ function mouseUpHandler(e) {
         currentDragMode = DRAG_MODE_NONE;
         redraw();
     }
-}
+};
 
-function mouseMoveHandler(e) {
-    previous_mouse_x = mouse_x;
-    previous_mouse_y = mouse_y;
+var mouseMoveHandler = function mouseMoveHandler(e) {
+    previousMouseX = mouseX;
+    previousMouseY = mouseY;
     var canvas_rectangle = canvas.getBoundingClientRect();
-    mouse_x = e.clientX - canvas_rectangle.left;
-    mouse_y = e.clientY - canvas_rectangle.top;
+    mouseX = e.clientX - canvas_rectangle.left;
+    mouseY = e.clientY - canvas_rectangle.top;
 
-    var delta_x = mouse_x - previous_mouse_x;
-    var delta_y = mouse_y - previous_mouse_y;
+    var deltaX = mouseX - previousMouseX;
+    var deltaY = mouseY - previousMouseY;
 
     if (controlMenu.isVisible) {
         if (controlMenu.isInMenuingMode) {
-            if (controlMenu.dragEvent(mouse_x, mouse_y)) {
+            if (controlMenu.dragEvent(mouseX, mouseY)) {
                 redraw();
             }
         } else {
@@ -1152,61 +804,67 @@ function mouseMoveHandler(e) {
                 case CONTROL_RECT_SELECT:
                     break;
                 case CONTROL_MOVE_SELECTION:
-                    var v = _Vector2D2.default.diff(draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(mouse_x, mouse_y)), draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(previous_mouse_x, previous_mouse_y)));
-                    for (var i = 0; i < selectedStrokes.length; ++i) {
-                        selectedStrokes[i].translate(v);
-                    }
+                    var vector = _Vector2D2.default.diff(draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(mouseX, mouseY)), draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(previousMouseX, previousMouseY)));
+                    selectedStrokes.forEach(function (stroke) {
+                        return stroke.translate(vector);
+                    });
                     drawing.isBoundingRectangleDirty = true;
                     break;
                 case CONTROL_TRANSLATE:
-                    draw2.translate(delta_x, delta_y);
+                    draw2.translate(deltaX, deltaY);
                     break;
                 case CONTROL_ZOOM:
-                    draw2.zoomIn(Math.pow(zoomFactorPerPixelDragged, delta_x - delta_y), drag_start_x, drag_start_y);
+                    draw2.zoomIn(Math.pow(zoomFactorPerPixelDragged, deltaX - deltaY), drag_start_x, drag_start_y);
+                    break;
+                default:
                     break;
             }
             redraw();
         }
     } else if (radialMenu.isVisible) {
-        if (radialMenu.dragEvent(mouse_x, mouse_y)) {
+        if (radialMenu.dragEvent(mouseX, mouseY)) {
             redraw();
         }
-    } else if (currentDragMode == DRAG_MODE_TRANSLATE) {
-        draw2.translate(delta_x, delta_y);
+    } else if (currentDragMode === DRAG_MODE_TRANSLATE) {
+        draw2.translate(deltaX, deltaY);
         redraw();
-    } else if (currentDragMode == DRAG_MODE_ZOOM) {
-        draw2.zoomIn(Math.pow(zoomFactorPerPixelDragged, delta_x - delta_y), drag_start_x, drag_start_y);
+    } else if (currentDragMode === DRAG_MODE_ZOOM) {
+        draw2.zoomIn(Math.pow(zoomFactorPerPixelDragged, deltaX - deltaY), drag_start_x, drag_start_y);
         redraw();
-    } else if (currentDragMode == DRAG_MODE_TOOL) {
+    } else if (currentDragMode === DRAG_MODE_TOOL) {
         switch (currentToolMode) {
             case TOOL_MODE_PENCIL:
-                mouseHistory.push(new _Vector2D2.default(mouse_x, mouse_y));
+                mouseHistory.push(new _Vector2D2.default(mouseX, mouseY));
                 break;
             case TOOL_MODE_RECT_SELECT:
                 break;
             case TOOL_MODE_MOVE_SELECTION:
-                var v = _Vector2D2.default.diff(draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(mouse_x, mouse_y)), draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(previous_mouse_x, previous_mouse_y)));
-                for (var i = 0; i < selectedStrokes.length; ++i) {
-                    selectedStrokes[i].translate(v);
+                {
+                    var _vector = _Vector2D2.default.diff(draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(mouseX, mouseY)), draw2.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(previousMouseX, previousMouseY)));
+                    selectedStrokes.forEach(function (stroke) {
+                        return stroke.translate(_vector);
+                    });
+                    drawing.isBoundingRectangleDirty = true;
+                    break;
                 }
-                drawing.isBoundingRectangleDirty = true;
+            default:
                 break;
         }
         redraw();
     } else if (showMouseCoordinates) {
         redraw();
     }
-}
+};
 
 canvas.addEventListener('mousedown', mouseDownHandler);
 canvas.addEventListener('mouseup', mouseUpHandler);
 canvas.addEventListener('mousemove', mouseMoveHandler);
-canvas.oncontextmenu = function (e) {
+canvas.oncontextmenu = function () {
     return false;
 }; // disable the right-click menu
 
 
-function setToolMode(toolMode) {
+window.setToolMode = function (toolMode) {
     var updateRadioButtons = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
     currentToolMode = toolMode;
@@ -1226,14 +884,14 @@ function setToolMode(toolMode) {
         }
         document.getElementById(idString).checked = true;
     }
-}
+};
 
-function frameAllButtonHandler() {
+window.frameAllButtonHandler = function () {
     draw2.frame(drawing.getBoundingRectangle(), true);
     redraw();
-}
+};
 
-function deleteSelectionButtonHandler() {
+window.deleteSelectionButtonHandler = function () {
     for (var i = selectedStrokes.length - 1; i >= 0; --i) {
         var j = drawing.strokes.indexOf(selectedStrokes[i]);
         if (j >= 0)
@@ -1246,15 +904,16 @@ function deleteSelectionButtonHandler() {
     drawing.isBoundingRectangleDirty = true;
 
     redraw();
-}
-function deleteAllButtonHandler() {
+};
+
+window.deleteAllButtonHandler = function () {
     selectedStrokes = [];
     // this should really be moved into a method in the Drawing prototype
     drawing.strokes = [];
     drawing.isBoundingRectangleDirty = true;
 
     redraw();
-}
+};
 
 /***/ }),
 /* 1 */
@@ -1455,6 +1114,499 @@ var Vector2D = function () {
 }();
 
 exports.default = Vector2D;
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _Vector2D = __webpack_require__(1);
+
+var _Vector2D2 = _interopRequireDefault(_Vector2D);
+
+var _Box2D = __webpack_require__(3);
+
+var _Box2D2 = _interopRequireDefault(_Box2D);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var pixels = 'pixels';
+var world = 'world';
+
+var Draw2D = function () {
+    function Draw2D(canvas) {
+        _classCallCheck(this, Draw2D);
+
+        this.canvas = canvas;
+        this.canvasContext = canvas.getContext('2d');
+        this.canvasWidth_pixels = canvas.width;
+        this.canvasHeight_pixels = canvas.height;
+        this.offsetXPixels = 0;
+        this.offsetYPixels = 0;
+        this.scaleFactorInWorldSpaceUnitsPerPixel = 1.0; // greater if user is more zoomed out
+        this.setFont(this.canvasContext.font);
+        this.coordinateSystem = Draw2D.PIXELS;
+    }
+
+    _createClass(Draw2D, [{
+        key: 'setFont',
+        value: function setFont(fontName) {
+            this.canvasContext.font = fontName;
+            this.fontHeight = parseInt(this.canvasContext.font.match(/\d+/)[0], 10);
+        }
+    }, {
+        key: 'setFontHeight',
+        value: function setFontHeight(fontHeight) {
+            this.canvasContext.font = fontHeight.toString() + 'px sans-serif';
+            this.fontHeight = parseInt(this.canvasContext.font.match(/\d+/)[0], 10);
+        }
+    }, {
+        key: 'convertPixelsToWorldSpaceUnitsX',
+        value: function convertPixelsToWorldSpaceUnitsX(xPixels) {
+            return (xPixels - this.offsetXPixels) * this.scaleFactorInWorldSpaceUnitsPerPixel;
+        }
+    }, {
+        key: 'convertPixelsToWorldSpaceUnitsY',
+        value: function convertPixelsToWorldSpaceUnitsY(yPixels) {
+            return (yPixels - this.offsetYPixels) * this.scaleFactorInWorldSpaceUnitsPerPixel;
+        }
+    }, {
+        key: 'convertPixelsToWorldSpaceUnits',
+        value: function convertPixelsToWorldSpaceUnits(pointPixels) {
+            return new _Vector2D2.default((pointPixels.x - this.offsetXPixels) * this.scaleFactorInWorldSpaceUnitsPerPixel, (pointPixels.y - this.offsetYPixels) * this.scaleFactorInWorldSpaceUnitsPerPixel);
+        }
+    }, {
+        key: 'convertWorldSpaceUnitsToPixelsX',
+        value: function convertWorldSpaceUnitsToPixelsX(xWorld) {
+            return xWorld / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetXPixels;
+        }
+    }, {
+        key: 'convertWorldSpaceUnitsToPixelsY',
+        value: function convertWorldSpaceUnitsToPixelsY(yWorld) {
+            return yWorld / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetYPixels;
+        }
+    }, {
+        key: 'convertWorldSpaceUnitsToPixels',
+        value: function convertWorldSpaceUnitsToPixels(pointWorld) {
+            return new _Vector2D2.default(pointWorld.x / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetXPixels, pointWorld.y / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetYPixels);
+        }
+    }, {
+        key: 'translate',
+        value: function translate(deltaXPixels, deltaYPixels) {
+            this.offsetXPixels += deltaXPixels;
+            this.offsetYPixels += deltaYPixels;
+        }
+    }, {
+        key: 'zoomIn',
+        value: function zoomIn(zoomFactor, centerXPixels, centerYPixels) {
+            this.scaleFactorInWorldSpaceUnitsPerPixel /= zoomFactor;
+            this.offsetXPixels = centerXPixels - (centerXPixels - this.offsetXPixels) * zoomFactor;
+            this.offsetYPixels = centerYPixels - (centerYPixels - this.offsetYPixels) * zoomFactor;
+        }
+    }, {
+        key: 'zoomInAroundCenterOfCanvas',
+        value: function zoomInAroundCenterOfCanvas(zoomFactor) {
+            this.zoomIn(zoomFactor, this.canvasWidth_pixels * 0.5, this.canvasHeight_pixels * 0.5);
+        }
+    }, {
+        key: 'translateAndZoomBasedOnDisplacementOfTwoFingers',
+        value: function translateAndZoomBasedOnDisplacementOfTwoFingers(aOld, bOld, aNew, bNew) {
+            var M1 = _Vector2D2.default.average(aOld, bOld);
+            var M2 = _Vector2D2.default.average(aNew, bNew);
+
+            var translation = _Vector2D2.default.diff(M2, M1);
+
+            var vector0 = _Vector2D2.default.diff(aOld, bOld);
+            var vector1 = _Vector2D2.default.diff(aNew, bNew);
+
+            var vector0Length = vector0.norm();
+            var vector1Length = vector1.norm();
+            var scaleFactor = 1;
+            if (vector0Length > 0 && vector1Length > 0) {
+                scaleFactor = vector1Length / vector0Length;
+            }
+            this.translate(translation.x, translation.y);
+            this.zoomIn(scaleFactor, M2.x, M2.y);
+        }
+    }, {
+        key: 'frame',
+        value: function frame(originalRect, expand) {
+            if (originalRect.isEmpty || originalRect.diagonal().x === 0 || originalRect.diagonal().y === 0) {
+                return;
+            }
+            var rect = originalRect;
+            if (expand) {
+                var diagonal = rect.diagonal().norm() / 20;
+                var vector = new _Vector2D2.default(diagonal, diagonal);
+                rect = new _Box2D2.default(_Vector2D2.default.diff(rect.min, vector), _Vector2D2.default.sum(rect.max, vector));
+            }
+            if (rect.width() / rect.height() >= this.canvasWidth_pixels / this.canvasHeight_pixels) {
+                // The rectangle to frame is wider (or shorter) than the canvas,
+                // so the limiting factor is the width of the rectangle.
+                this.offsetXPixels = -rect.min.x * this.canvasWidth_pixels / rect.width();
+                this.scaleFactorInWorldSpaceUnitsPerPixel = rect.width() / this.canvasWidth_pixels;
+                this.offsetYPixels = this.canvasHeight_pixels / 2 - rect.center().y / this.scaleFactorInWorldSpaceUnitsPerPixel;
+            } else {
+                // The limiting factor is the height of the rectangle.
+                this.offsetYPixels = -rect.min.y * this.canvasHeight_pixels / rect.height();
+                this.scaleFactorInWorldSpaceUnitsPerPixel = rect.height() / this.canvasHeight_pixels;
+                this.offsetXPixels = this.canvasWidth_pixels / 2 - rect.center().x / this.scaleFactorInWorldSpaceUnitsPerPixel;
+            }
+        }
+    }, {
+        key: 'resize',
+        value: function resize(width, height) {
+            var oldCenter = this.convertPixelsToWorldSpaceUnits(new _Vector2D2.default(this.canvasWidth_pixels * 0.5, this.canvasHeight_pixels * 0.5));
+            var radius = Math.min(this.canvasWidth_pixels, this.canvasHeight_pixels) * 0.5 * this.scaleFactorInWorldSpaceUnitsPerPixel;
+
+            this.canvasWidth_pixels = width;
+            this.canvasHeight_pixels = height;
+
+            if (radius > 0) {
+                this.frame(new _Box2D2.default(new _Vector2D2.default(oldCenter.x - radius, oldCenter.y - radius), new _Vector2D2.default(oldCenter.x + radius, oldCenter.y + radius)), false);
+            }
+        }
+    }, {
+        key: 'setCoordinateSystemToPixels',
+        value: function setCoordinateSystemToPixels() {
+            this.coordinateSystem = Draw2D.PIXELS;
+        }
+    }, {
+        key: 'setCoordinateSystemToWorldSpaceUnits',
+        value: function setCoordinateSystemToWorldSpaceUnits() {
+            this.coordinateSystem = Draw2D.WORLD;
+        }
+    }, {
+        key: 'setStrokeColor',
+        value: function setStrokeColor(red, green, blue) {
+            var alpha = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1.0;
+
+            if (alpha === 1.0) {
+                this.canvasContext.strokeStyle = 'rgb(' + red + ',' + green + ',' + blue + ')';
+            } else {
+                this.canvasContext.strokeStyle = 'rgba(' + red + ',' + green + ',' + blue + ',' + alpha + ')';
+            }
+        }
+    }, {
+        key: 'setFillColor',
+        value: function setFillColor(red, green, blue) {
+            var alpha = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1.0;
+
+            if (alpha === 1.0) {
+                this.canvasContext.fillStyle = 'rgb(' + red + ',' + green + ',' + blue + ')';
+            } else {
+                this.canvasContext.fillStyle = 'rgba(' + red + ',' + green + ',' + blue + ',' + alpha + ')';
+            }
+        }
+    }, {
+        key: 'setLineWidth',
+        value: function setLineWidth(lw) {
+            this.canvasContext.lineWidth = lw;
+        }
+    }, {
+        key: 'clear',
+        value: function clear(red, green, blue) {
+            this.setFillColor(red, green, blue);
+            this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }, {
+        key: 'drawLine',
+        value: function drawLine(x1, y1, x2, y2) {
+            if (this.coordinateSystem === Draw2D.WORLD) {
+                this.contextedDrawLine(this.convertWorldSpaceUnitsToPixelsX(x1), this.convertWorldSpaceUnitsToPixelsY(y1), this.convertWorldSpaceUnitsToPixelsX(x2), this.convertWorldSpaceUnitsToPixelsY(y2));
+            } else {
+                this.contextedDrawLine(x1, y1, x2, y2);
+            }
+        }
+    }, {
+        key: 'contextedDrawLine',
+        value: function contextedDrawLine(x1, y1, x2, y2) {
+            this.canvasContext.beginPath();
+            this.canvasContext.moveTo(x1, y1);
+            this.canvasContext.lineTo(x2, y2);
+            this.canvasContext.stroke();
+        }
+    }, {
+        key: 'drawRect',
+        value: function drawRect(unsignedX, unsignedY, unsignedWidth, unsignedHeight) {
+            var isFilled = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+
+            var _Draw2D$getRectSigned = Draw2D.getRectSignedCoords(unsignedX, unsignedY, unsignedWidth, unsignedHeight),
+                height = _Draw2D$getRectSigned.height,
+                width = _Draw2D$getRectSigned.width,
+                x = _Draw2D$getRectSigned.x,
+                y = _Draw2D$getRectSigned.y;
+
+            if (this.coordinateSystem === Draw2D.WORLD) {
+                this.contextedDrawRect(this.convertWorldSpaceUnitsToPixelsX(x), this.convertWorldSpaceUnitsToPixelsY(y), this.scaleFactorInWorldSpaceUnitsPerPixel, this.scaleFactorInWorldSpaceUnitsPerPixel, isFilled);
+            } else {
+                this.contextedDrawRect(x, y, width, height, isFilled);
+            }
+        }
+    }, {
+        key: 'contextedDrawRect',
+        value: function contextedDrawRect(x, y, width, height, isFilled) {
+            if (isFilled) {
+                this.canvasContext.fillRect(x, y, width, height);
+            } else {
+                this.canvasContext.strokeRect(x, y, width, height);
+            }
+        }
+    }, {
+        key: 'fillRect',
+        value: function fillRect(x, y, w, h) {
+            this.drawRect(x, y, w, h, true);
+        }
+    }, {
+        key: 'drawCircle',
+        value: function drawCircle(xCenter, yCenter, radius) {
+            var isFilled = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+            if (this.coordinateSystem === Draw2D.WORLD) {
+                this.contextedDrawCircle(this.convertWorldSpaceUnitsToPixelsX(xCenter), this.convertWorldSpaceUnitsToPixelsY(yCenter), radius / this.scaleFactorInWorldSpaceUnitsPerPixel, isFilled);
+            } else {
+                this.contextedDrawCircle(xCenter, yCenter, radius, isFilled);
+            }
+        }
+    }, {
+        key: 'contextedDrawCircle',
+        value: function contextedDrawCircle(xCenter, yCenter, radius) {
+            var isFilled = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+            this.canvasContext.beginPath();
+            this.canvasContext.arc(xCenter, yCenter, radius, 0, 2 * Math.PI, false);
+
+            if (isFilled) {
+                this.canvasContext.fill();
+            } else {
+                this.canvasContext.stroke();
+            }
+        }
+    }, {
+        key: 'fillCircle',
+        value: function fillCircle(xCenter, yCenter, radius) {
+            this.drawCircle(xCenter, yCenter, radius, true);
+        }
+    }, {
+        key: 'drawPolyline',
+        value: function drawPolyline(points) {
+            var _this = this;
+
+            var isFilled = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+            var isClosed = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+
+            if (points.length < 2) {
+                return;
+            }
+            this.canvasContext.beginPath();
+            points.forEach(function (point, i) {
+                var x = point.x,
+                    y = point.y;
+
+                if (_this.coordinateSystem === Draw2D.WORLD) {
+                    x = _this.convertWorldSpaceUnitsToPixelsX(x);
+                    y = _this.convertWorldSpaceUnitsToPixelsY(y);
+                }
+                _this.canvasContext[(i ? 'line' : 'move') + 'To'](x, y);
+            });
+            if (isClosed) {
+                this.canvasContext.closePath();
+            }
+            if (isFilled) {
+                this.canvasContext.fill();
+            } else {
+                this.canvasContext.stroke();
+            }
+        }
+    }, {
+        key: 'drawPolygon',
+        value: function drawPolygon(points) {
+            var isFilled = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+            this.drawPolyline(points, isFilled, true);
+        }
+    }, {
+        key: 'fillPolygon',
+        value: function fillPolygon(points) {
+            this.drawPolyline(points, true, true);
+        }
+    }, {
+        key: 'stringWidth',
+        value: function stringWidth(s) {
+            if (s.length === 0) return 0;
+            return this.canvasContext.measureText(s).width;
+        }
+    }, {
+        key: 'drawString',
+        value: function drawString(x, y, s) {
+            if (s.length === 0) return;
+            this.canvasContext.fillText(s, x, y);
+        }
+    }], [{
+        key: 'getRectSignedCoords',
+        value: function getRectSignedCoords(x, y, width, height) {
+            return {
+                height: height < 0 ? -height : height,
+                width: width < 0 ? -width : width,
+                x: width < 0 ? x + width : x,
+                y: height < 0 ? y + height : y
+            };
+        }
+    }, {
+        key: 'PIXELS',
+        get: function get() {
+            return pixels;
+        },
+        set: function set(input) {
+            pixels = input;
+        }
+    }, {
+        key: 'WORLD',
+        get: function get() {
+            return world;
+        },
+        set: function set(input) {
+            world = input;
+        }
+    }]);
+
+    return Draw2D;
+}();
+
+exports.default = Draw2D;
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _Vector2D = __webpack_require__(1);
+
+var _Vector2D2 = _interopRequireDefault(_Vector2D);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Box2D = function () {
+    function Box2D(vectorMin, vectorMax) {
+        _classCallCheck(this, Box2D);
+
+        this.isEmpty = true;
+        this.min = new _Vector2D2.default();
+        this.max = new _Vector2D2.default();
+        if (vectorMin && vectorMax) {
+            this.boundPoint(vectorMin);
+            this.boundPoint(vectorMax);
+        }
+    }
+
+    _createClass(Box2D, [{
+        key: 'clear',
+        value: function clear() {
+            this.isEmpty = true;
+            this.min = new _Vector2D2.default();
+            this.max = new _Vector2D2.default();
+        }
+    }, {
+        key: 'center',
+        value: function center() {
+            return _Vector2D2.default.average(this.min, this.max);
+        }
+    }, {
+        key: 'diagonal',
+        value: function diagonal() {
+            return _Vector2D2.default.diff(this.max, this.min);
+        }
+    }, {
+        key: 'width',
+        value: function width() {
+            return this.max.x - this.min.x;
+        }
+    }, {
+        key: 'height',
+        value: function height() {
+            return this.max.y - this.min.y;
+        }
+    }, {
+        key: 'containsPoint',
+        value: function containsPoint(point) {
+            return !(this.isEmpty || point.x < this.min.x || point.x > this.max.x || point.y < this.min.y || point.y > this.max.y);
+        }
+    }, {
+        key: 'containsBox',
+        value: function containsBox(box) {
+            if (this.isEmpty) {
+                return false;
+            }
+            if (box.isEmpty) {
+                return true;
+            }
+
+            return this.min.x <= box.min.x && box.max.x <= this.max.x && this.min.y <= box.min.y && box.max.y <= this.max.y;
+        }
+    }, {
+        key: 'boundPoint',
+        value: function boundPoint(vector) {
+            if (this.isEmpty) {
+                this.isEmpty = false;
+                this.min.copy(vector);
+                this.max.copy(vector);
+            } else {
+                if (vector.x < this.min.x) {
+                    this.min.x = vector.x;
+                } else if (vector.x > this.max.x) {
+                    this.max.x = vector.x;
+                }
+
+                if (vector.y < this.min.y) {
+                    this.min.y = vector.y;
+                } else if (vector.y > this.max.y) {
+                    this.max.y = vector.y;
+                }
+            }
+        }
+    }, {
+        key: 'boundPoints',
+        value: function boundPoints(points) {
+            var _this = this;
+
+            points.forEach(function (point) {
+                return _this.boundPoint(point);
+            });
+        }
+    }, {
+        key: 'boundBox',
+        value: function boundBox(box) {
+            if (!box.isEmpty) {
+                this.boundPoint(box.min);
+                this.boundPoint(box.max);
+            }
+        }
+    }]);
+
+    return Box2D;
+}();
+
+exports.default = Box2D;
 
 /***/ })
 /******/ ]);

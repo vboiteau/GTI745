@@ -1,347 +1,6 @@
 import Vector2D from './Vector2D';
-
-// ============================================================
-// Box2 objects are for storing 2D axis-aligned rectangles.
-// To create a new instance, use the new keyword:
-//    var box_a = new Box2();
-//    var box_b = new Box2(new Vector2D(-10,-10),new Vector2D(10,10));
-// ============================================================
-
-function Box2(vec2_min = null, vec2_max = null) {
-    // Internally, the min and max points are diagonally opposite,
-    // and are only valid if isEmpty===false.
-    // Below, we initialize things based on what the client passed in.
-
-    this.isEmpty = true;
-    this.min = new Vector2D();
-    this.max = new Vector2D();
-    if (vec2_min !== null && vec2_max !== null) {
-        this.boundPoint(vec2_min);
-        this.boundPoint(vec2_max);
-    }
-}
-
-Box2.prototype = {
-    clear() { this.isEmpty = true; this.min = new Vector2D(); this.max = new Vector2D(); },
-    center() { return Vector2D.average(this.min, this.max); },
-    diagonal() { return Vector2D.diff(this.max, this.min); },
-    width() { return this.max.x - this.min.x; },
-    height() { return this.max.y - this.min.y; },
-    containsPoint(q) {
-        return !(this.isEmpty || q.x < this.min.x || q.x > this.max.x || q.y < this.min.y || q.y > this.max.y);
-    },
-    containsBox(b) {
-        if (this.isEmpty) return false;
-        if (b.isEmpty) return true;
-        return this.min.x <= b.min.x && b.max.x <= this.max.x && this.min.y <= b.min.y && b.max.y <= this.max.y;
-    },
-
-
-    // Enlarges the box enough to contain the given point
-    boundPoint(vec2) {
-        if (this.isEmpty) {
-            this.isEmpty = false;
-            this.min.copy(vec2);
-            this.max.copy(vec2);
-        } else {
-            if (vec2.x < this.min.x) this.min.x = vec2.x;
-            else if (vec2.x > this.max.x) this.max.x = vec2.x;
-
-            if (vec2.y < this.min.y) this.min.y = vec2.y;
-            else if (vec2.y > this.max.y) this.max.y = vec2.y;
-        }
-    },
-    boundPoints(points) {
-        for (let i = 0; i < points.length; ++i) {
-            this.boundPoint(points[i]);
-        }
-    },
-
-    // Enlarges the box enough to contain the given box
-    boundBox(box) {
-        if (!box.isEmpty) {
-            this.boundPoint(box.min);
-            this.boundPoint(box.max);
-        }
-    }
-};
-
-// ============================================================
-// Draw2 objects are for managing the transformation between
-// pixel space and a 2D world space, allowing a client to pan and zoom.
-// The objects also manage the drawing of simple shapes on a canvas,
-// allowing a client to pass in coordinates in either space
-// (pixel space or world space).
-// To create a new instance, use the new keyword:
-//    var draw2 = new Draw2(canvas);
-// ============================================================
-
-function Draw2(canvas) {
-    this.canvas = canvas;
-    this.canvas_context = canvas.getContext('2d');
-    this.canvasWidth_pixels = canvas.width;
-    this.canvasHeight_pixels = canvas.height;
-    this.offsetX_pixels = 0;
-    this.offsetY_pixels = 0;
-    this.scaleFactorInWorldSpaceUnitsPerPixel = 1.0; // greater if user is more zoomed out
-    this.setFont(this.canvas_context.font);
-    this.coordinateSystem = Draw2.PIXELS;
-}
-
-// static constants
-Draw2.PIXELS = 'pixels';
-Draw2.WORLD = 'world';
-
-Draw2.prototype = {
-    setFont(fontName/* Example: 'italic 27px Calibri' */) {
-        this.canvas_context.font = fontName;
-        this.fontHeight = parseInt(this.canvas_context.font.match(/\d+/)[0], 10);
-    },
-    setFontHeight(fontHeight /* in pixels */) {
-        this.canvas_context.font = `${fontHeight.toString()}px sans-serif`;
-        this.fontHeight = parseInt(this.canvas_context.font.match(/\d+/)[0], 10);
-    },
-
-    convertPixelsToWorldSpaceUnitsX(x_pixels) {
-        return (x_pixels - this.offsetX_pixels) * this.scaleFactorInWorldSpaceUnitsPerPixel;
-    },
-    convertPixelsToWorldSpaceUnitsY(y_pixels) {
-        return (y_pixels - this.offsetY_pixels) * this.scaleFactorInWorldSpaceUnitsPerPixel;
-    },
-    convertPixelsToWorldSpaceUnits(p_pixels) {
-        return new Vector2D(
-            (p_pixels.x - this.offsetX_pixels) * this.scaleFactorInWorldSpaceUnitsPerPixel,
-            (p_pixels.y - this.offsetY_pixels) * this.scaleFactorInWorldSpaceUnitsPerPixel
-        );
-    },
-
-    convertWorldSpaceUnitsToPixelsX(x_world) {
-        return x_world / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetX_pixels;
-    },
-    convertWorldSpaceUnitsToPixelsY(y_world) {
-        return y_world / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetY_pixels;
-    },
-    convertWorldSpaceUnitsToPixels(p_world) {
-        return new Vector2D(
-            p_world.x / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetX_pixels,
-            p_world.y / this.scaleFactorInWorldSpaceUnitsPerPixel + this.offsetY_pixels
-        );
-    },
-
-    // This is for translating, also called scrolling or panning
-    translate(deltaX_pixels, deltaY_pixels) {
-        this.offsetX_pixels += deltaX_pixels;
-        this.offsetY_pixels += deltaY_pixels;
-    },
-
-    zoomIn(
-        zoomFactor, // greater than 1 to zoom in, between 0 and 1 to zoom out
-        centerX_pixels,
-        centerY_pixels
-    ) {
-        this.scaleFactorInWorldSpaceUnitsPerPixel /= zoomFactor;
-        this.offsetX_pixels = centerX_pixels - (centerX_pixels - this.offsetX_pixels) * zoomFactor;
-        this.offsetY_pixels = centerY_pixels - (centerY_pixels - this.offsetY_pixels) * zoomFactor;
-    },
-    zoomInAroundCenterOfCanvas(zoomFactor // greater than 1 to zoom in, between 0 and 1 to zoom out
-    ) {
-        this.zoomIn(zoomFactor, this.canvasWidth_pixels * 0.5, this.canvasHeight_pixels * 0.5);
-    },
-
-    // This can be used to implement bimanual (2-handed) camera control,
-    // or 2-finger camera control, as in a "pinch" gesture
-    translateAndZoomBasedOnDisplacementOfTwoFingers(
-        // these are instances of Vector2D in pixel coordinates
-        A_old, B_old,
-        A_new, B_new
-    ) {
-        // Compute midpoints of each pair of points
-        const M1 = Vector2D.average(A_old, B_old);
-        const M2 = Vector2D.average(A_new, B_new);
-
-        // This is the translation that the world should appear to undergo.
-        const translation = Vector2D.diff(M2, M1);
-
-        // Compute a vector associated with each pair of points.
-        const v1 = Vector2D.diff(A_old, B_old);
-        const v2 = Vector2D.diff(A_new, B_new);
-
-        const v1_length = v1.norm();
-        const v2_length = v2.norm();
-        let scaleFactor = 1;
-        if (v1_length > 0 && v2_length > 0) { scaleFactor = v2_length / v1_length; }
-        this.translate(translation.x, translation.y);
-        this.zoomIn(scaleFactor, M2.x, M2.y);
-    },
-
-    // Causes the zoom and translation to be adjusted to fit the given rectangle within the canvas
-    frame(
-        rect, // an instance of Box2; the rectangle (in world space) to frame
-        expand // true if caller wants a margin of whitespace added around the rect
-    ) {
-        if (rect.isEmpty || rect.diagonal().x === 0 || rect.diagonal().y === 0) {
-            return;
-        }
-        if (expand) {
-            const diagonal = rect.diagonal().norm() / 20;
-            const v = new Vector2D(diagonal, diagonal);
-            rect = new Box2(Vector2D.diff(rect.min, v), Vector2D.sum(rect.max, v));
-        }
-        if (rect.width() / rect.height() >= this.canvasWidth_pixels / this.canvasHeight_pixels) {
-            // The rectangle to frame is wider (or shorter) than the canvas,
-            // so the limiting factor is the width of the rectangle.
-            this.offsetX_pixels = -rect.min.x * this.canvasWidth_pixels / rect.width();
-            this.scaleFactorInWorldSpaceUnitsPerPixel = rect.width() / this.canvasWidth_pixels;
-            this.offsetY_pixels = this.canvasHeight_pixels / 2 - rect.center().y / this.scaleFactorInWorldSpaceUnitsPerPixel;
-        } else {
-            // The limiting factor is the height of the rectangle.
-            this.offsetY_pixels = -rect.min.y * this.canvasHeight_pixels / rect.height();
-            this.scaleFactorInWorldSpaceUnitsPerPixel = rect.height() / this.canvasHeight_pixels;
-            this.offsetX_pixels = this.canvasWidth_pixels / 2 - rect.center().x / this.scaleFactorInWorldSpaceUnitsPerPixel;
-        }
-    },
-
-    resize(w, h // the new canvas dimensions, in pixels
-    ) {
-        const oldCenter = this.convertPixelsToWorldSpaceUnits(new Vector2D(this.canvasWidth_pixels * 0.5, this.canvasHeight_pixels * 0.5));
-        const radius = Math.min(this.canvasWidth_pixels, this.canvasHeight_pixels) * 0.5 * this.scaleFactorInWorldSpaceUnitsPerPixel;
-
-        this.canvasWidth_pixels = w;
-        this.canvasHeight_pixels = h;
-
-        if (radius > 0) {
-            this.frame(
-                new Box2(
-                    new Vector2D(oldCenter.x - radius, oldCenter.y - radius),
-                    new Vector2D(oldCenter.x + radius, oldCenter.y + radius)
-                ),
-                false
-            );
-        }
-    },
-
-    setCoordinateSystemToPixels() {
-        this.coordinateSystem = Draw2.PIXELS;
-    },
-    setCoordinateSystemToWorldSpaceUnits() {
-        this.coordinateSystem = Draw2.WORLD;
-    },
-
-    setStrokeColor(
-        red, green, blue, // between 0 and 255
-        alpha = 1.0 // between 0.0 and 1.0
-    ) {
-        if (alpha === 1.0) { this.canvas_context.strokeStyle = `rgb(${red},${green},${blue})`; } else { this.canvas_context.strokeStyle = `rgba(${red},${green},${blue},${alpha})`; }
-    },
-    setFillColor(
-        red, green, blue, // between 0 and 255
-        alpha = 1.0 // between 0.0 and 1.0
-    ) {
-        if (alpha === 1.0) { this.canvas_context.fillStyle = `rgb(${red},${green},${blue})`; } else { this.canvas_context.fillStyle = `rgba(${red},${green},${blue},${alpha})`; }
-    },
-    setLineWidth(lw) {
-        this.canvas_context.lineWidth = lw;
-    },
-    clear(red, green, blue // between 0 and 255
-    ) {
-        this.setFillColor(red, green, blue);
-        this.canvas_context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    },
-    drawLine(x1, y1, x2, y2) {
-        if (this.coordinateSystem === Draw2.WORLD) {
-            x1 = this.convertWorldSpaceUnitsToPixelsX(x1);
-            y1 = this.convertWorldSpaceUnitsToPixelsY(y1);
-            x2 = this.convertWorldSpaceUnitsToPixelsX(x2);
-            y2 = this.convertWorldSpaceUnitsToPixelsY(y2);
-        }
-        this.canvas_context.beginPath();
-        this.canvas_context.moveTo(x1, y1);
-        this.canvas_context.lineTo(x2, y2);
-        this.canvas_context.stroke();
-    },
-    drawRect(x, y, w, h, isFilled = false) {
-        if (w < 0) {
-            w = -w;
-            x -= w;
-        }
-        if (h < 0) {
-            h = -h;
-            y -= h;
-        }
-        if (this.coordinateSystem === Draw2.WORLD) {
-            x = this.convertWorldSpaceUnitsToPixelsX(x);
-            y = this.convertWorldSpaceUnitsToPixelsY(y);
-            w /= this.scaleFactorInWorldSpaceUnitsPerPixel;
-            h /= this.scaleFactorInWorldSpaceUnitsPerPixel;
-        }
-        if (isFilled) this.canvas_context.fillRect(x, y, w, h);
-        else this.canvas_context.strokeRect(x, y, w, h);
-    },
-    fillRect(x, y, w, h) {
-        this.drawRect(x, y, w, h, true);
-    },
-    drawCircle(x_center, y_center, radius, isFilled = false) {
-        if (this.coordinateSystem === Draw2.WORLD) {
-            x_center = this.convertWorldSpaceUnitsToPixelsX(x_center);
-            y_center = this.convertWorldSpaceUnitsToPixelsY(y_center);
-            radius /= this.scaleFactorInWorldSpaceUnitsPerPixel;
-        }
-        this.canvas_context.beginPath();
-        this.canvas_context.arc(x_center, y_center, radius, 0, 2 * Math.PI, false);
-        if (isFilled) this.canvas_context.fill();
-        else this.canvas_context.stroke();
-    },
-    fillCircle(x_center, y_center, radius) {
-        this.drawCircle(x_center, y_center, radius, true);
-    },
-    drawPolyline(points, isFilled = false, isClosed = false) {
-        if (points.length <= 1) { return; }
-        let x;
-        let y;
-        this.canvas_context.beginPath();
-        x = points[0].x;
-        y = points[0].y;
-        if (this.coordinateSystem === Draw2.WORLD) {
-            x = this.convertWorldSpaceUnitsToPixelsX(x);
-            y = this.convertWorldSpaceUnitsToPixelsY(y);
-        }
-        this.canvas_context.moveTo(x, y);
-        for (let i = 1; i < points.length; ++i) {
-            x = points[i].x;
-            y = points[i].y;
-            if (this.coordinateSystem === Draw2.WORLD) {
-                x = this.convertWorldSpaceUnitsToPixelsX(x);
-                y = this.convertWorldSpaceUnitsToPixelsY(y);
-            }
-            this.canvas_context.lineTo(x, y);
-        }
-        if (isClosed) this.canvas_context.closePath();
-        if (isFilled) this.canvas_context.fill();
-        else this.canvas_context.stroke();
-    },
-    drawPolygon(points, isFilled = false) {
-        this.drawPolyline(points, isFilled, true);
-    },
-    fillPolygon(points) {
-        this.drawPolyline(points, true, true);
-    },
-
-    // returns the width of a string, in pixels
-    stringWidth(s) {
-        if (s.length === 0) return 0;
-        return this.canvas_context.measureText(s).width;
-    },
-
-    // draws the given string using the current fill color
-    drawString(
-        x, y, // left extremity of the baseline of the string (near the lower-left corner of the string)
-        s // the string
-    ) {
-        if (s.length === 0) return;
-        this.canvas_context.fillText(s, x, y);
-    }
-};
-
+import Box2D from './Box2D';
+import Draw2D from './Draw2D'
 // ============================================================
 // A radial popup menu.
 // To create a new instance, use the new keyword:
@@ -381,8 +40,8 @@ function RadialMenu() {
     this.y0 = 0;
 
     // pixel coordinates of current mouse position
-    this.mouse_x = 0;
-    this.mouse_y = 0;
+    this.mouseX = 0;
+    this.mouseY = 0;
 
     this.isVisible = false;
 }
@@ -401,14 +60,10 @@ RadialMenu.SOUTH_WEST = 6;
 RadialMenu.WEST = 7;
 RadialMenu.NORTH_WEST = 8;
 RadialMenu.N = 8;
-
-// colors (shades of gray)
-RadialMenu.FOREGROUND_1 = 0; // foreground 1 is black
-RadialMenu.FOREGROUND_2 = 127; // foreground 2 is 50% gray
-RadialMenu.BACKGROUND = 255; // background is white
+RadialMenu.FOREGROUND_1 = 0;
+RadialMenu.FOREGROUND_2 = 127;
+RadialMenu.BACKGROUND = 255;
 RadialMenu.MENU_ALPHA = 0.6;
-
-// These are in pixels.
 RadialMenu.radiusOfNeutralZone = 10;
 RadialMenu.textHeight = 20;
 RadialMenu.marginAroundText = 6;
@@ -457,8 +112,8 @@ RadialMenu.prototype = {
 
     // The below methods, that handle mouse events, return true if the client should redraw.
     pressEvent(x, y) {
-        this.x0 = this.mouse_x = x;
-        this.y0 = this.mouse_y = y;
+        this.x0 = this.mouseX = x;
+        this.y0 = this.mouseY = y;
         this.selectedItem = RadialMenu.CENTRAL_ITEM;
         this.isVisible = true;
         return true;
@@ -473,17 +128,17 @@ RadialMenu.prototype = {
     moveEvent(x, y) {
         if (!this.isVisible) { return false; }
         // make the center of the menu follow the cursor
-        this.x0 = this.mouse_x = x;
-        this.y0 = this.mouse_y = y;
+        this.x0 = this.mouseX = x;
+        this.y0 = this.mouseY = y;
         return true;
     },
     dragEvent(x, y) {
         if (!this.isVisible) { return false; }
 
-        this.mouse_x = x;
-        this.mouse_y = y;
-        const dx = this.mouse_x - this.x0;
-        const dy = this.mouse_y - this.y0;
+        this.mouseX = x;
+        this.mouseY = y;
+        const dx = this.mouseX - this.x0;
+        const dy = this.mouseY - this.y0;
         const radius = Math.sqrt(dx * dx + dy * dy);
 
         let newlySelectedItem = RadialMenu.CENTRAL_ITEM;
@@ -715,7 +370,7 @@ ControlMenu.menuRadius = RadialMenu.radiusOfNeutralZone * 6;
 function Stroke() {
     this.points = []; // these points are in world space
 
-    this.boundingRectangle = new Box2();
+    this.boundingRectangle = new Box2D();
     this.isBoundingRectangleDirty = true;
 }
 Stroke.prototype = {
@@ -731,7 +386,7 @@ Stroke.prototype = {
         }
         return this.boundingRectangle;
     },
-    isContainedInRectangle(rectangle /* an instance of Box2 */) {
+    isContainedInRectangle(rectangle /* an instance of Box2D */) {
         return rectangle.containsBox(this.getBoundingRectangle());
     },
     isContainedInLassoPolygon(polygonPoints /* an array of Vector2D in world space */) {
@@ -752,10 +407,10 @@ Stroke.prototype = {
         const cosine = Math.cos(angle);
         for (let i = 0; i < this.points.length; ++i) {
             const p = this.points[i];
-            const delta_x = p.x - center.x;
-            const delta_y = p.y - center.y;
-            const new_x = center.x + delta_x * cosine - delta_y * sine;
-            const new_y = center.y + delta_x * sine + delta_y * cosine;
+            const deltaX = p.x - center.x;
+            const deltaY = p.y - center.y;
+            const new_x = center.x + deltaX * cosine - deltaY * sine;
+            const new_y = center.y + deltaX * sine + deltaY * cosine;
             p.x = new_x;
             p.y = new_y;
         }
@@ -775,7 +430,7 @@ Stroke.prototype = {
 function Drawing() {
     this.strokes = [];
 
-    this.boundingRectangle = new Box2();
+    this.boundingRectangle = new Box2D();
     this.isBoundingRectangleDirty = true;
 }
 Drawing.prototype = {
@@ -813,7 +468,7 @@ Drawing.prototype = {
 
 const canvas = document.getElementById('myCanvas');
 // var canvas_context = canvas.getContext("2d");
-const draw2 = new Draw2(canvas);
+const draw2 = new Draw2D(canvas);
 const drawing = new Drawing();
 
 const radialMenu = new RadialMenu();
@@ -822,17 +477,17 @@ const controlMenu = new ControlMenu();
 // stores a subset of the strokes
 let selectedStrokes = []; // an array of instances of Stroke
 
-let mouse_x,
-    mouse_y,
-    previous_mouse_x,
-    previous_mouse_y,
+let mouseX,
+    mouseY,
+    previousMouseX,
+    previousMouseY,
     drag_start_x,
     drag_start_y;
 let mouseHistory = []; // array of Vector2D in pixel space
 
 const zoomFactorPerPixelDragged = 1.005;
 
-const showMouseCoordinates = false;
+window.showMouseCoordinates = false;
 
 // The below tool modes are constants,
 // but are defined using var instead of const
@@ -871,7 +526,7 @@ controlMenu.setItemLabelAndID(RadialMenu.SOUTH_EAST, 'Translate', CONTROL_TRANSL
 controlMenu.setItemLabelAndID(RadialMenu.SOUTH_WEST, 'Zoom', CONTROL_ZOOM);
 
 
-const redraw = function () {
+const redraw = () => {
     draw2.setFontHeight(RadialMenu.textHeight);
     draw2.clear(255, 255, 255);
     draw2.setCoordinateSystemToWorldSpaceUnits();
@@ -896,9 +551,9 @@ const redraw = function () {
                 break;
             case TOOL_MODE_RECT_SELECT:
                 draw2.setFillColor(255, 128, 0, 0.3); // transparent orange
-                draw2.fillRect(drag_start_x, drag_start_y, mouse_x - drag_start_x, mouse_y - drag_start_y);
+                draw2.fillRect(drag_start_x, drag_start_y, mouseX - drag_start_x, mouseY - drag_start_y);
                 draw2.setStrokeColor(255, 0, 0); // red
-                draw2.drawRect(drag_start_x, drag_start_y, mouse_x - drag_start_x, mouse_y - drag_start_y);
+                draw2.drawRect(drag_start_x, drag_start_y, mouseX - drag_start_x, mouseY - drag_start_y);
                 break;
             case TOOL_MODE_MOVE_SELECTION:
                 break;
@@ -910,9 +565,9 @@ const redraw = function () {
 
     if (showMouseCoordinates) {
         draw2.setFillColor(0, 0, 0);
-        const x_world = draw2.convertPixelsToWorldSpaceUnitsX(mouse_x);
-        const y_world = draw2.convertPixelsToWorldSpaceUnitsY(mouse_y);
-        draw2.drawString(20, canvas.height - 20, `pixels:(${mouse_x}, ${mouse_y})   world:(${parseFloat(x_world).toFixed(2)}, ${parseFloat(y_world).toFixed(2)})`);
+        const x_world = draw2.convertPixelsToWorldSpaceUnitsX(mouseX);
+        const y_world = draw2.convertPixelsToWorldSpaceUnitsY(mouseY);
+        draw2.drawString(20, canvas.height - 20, `pixels:(${mouseX}, ${mouseY})   world:(${parseFloat(x_world).toFixed(2)}, ${parseFloat(y_world).toFixed(2)})`);
     }
 };
 
@@ -928,46 +583,46 @@ const BUTTONS_BIT_MIDDLE = 4;
 const BUTTONS_BIT_RIGHT = 2;
 
 
-function mouseDownHandler(e) {
+window.mouseDownHandler = e => {
     const canvas_rectangle = canvas.getBoundingClientRect();
-    mouse_x = e.clientX - canvas_rectangle.left;
-    mouse_y = e.clientY - canvas_rectangle.top;
+    mouseX = e.clientX - canvas_rectangle.left;
+    mouseY = e.clientY - canvas_rectangle.top;
     // console.log("mouse down");
-    // console.log("   " + mouse_x + "," + mouse_y);
+    // console.log("   " + mouseX + "," + mouseY);
 
     if (currentDragMode !== DRAG_MODE_NONE)
     // The user is already dragging with a previously pressed button,
     // so ignore the press event from this new button.
     { return; }
 
-    drag_start_x = previous_mouse_x = mouse_x;
-    drag_start_y = previous_mouse_y = mouse_y;
+    drag_start_x = previousMouseX = mouseX;
+    drag_start_y = previousMouseY = mouseY;
 
     if (controlMenu.isVisible || (e.button === BUTTON_RIGHT && e.shiftKey)) {
-        if (controlMenu.pressEvent(mouse_x, mouse_y)) { redraw(); }
+        if (controlMenu.pressEvent(mouseX, mouseY)) { redraw(); }
     } else if (radialMenu.isVisible || (e.button === BUTTON_RIGHT)) {
-        if (radialMenu.pressEvent(mouse_x, mouse_y)) { redraw(); }
+        if (radialMenu.pressEvent(mouseX, mouseY)) { redraw(); }
     } else if (e.button === BUTTON_LEFT && e.shiftKey) {
         currentDragMode = DRAG_MODE_TRANSLATE;
     } else if (e.button === BUTTON_LEFT && e.ctrlKey) {
         currentDragMode = DRAG_MODE_ZOOM;
     } else if (e.button === BUTTON_LEFT) {
         mouseHistory = [];
-        mouseHistory.push(new Vector2D(mouse_x, mouse_y));
+        mouseHistory.push(new Vector2D(mouseX, mouseY));
         currentDragMode = DRAG_MODE_TOOL;
     }
-}
+};
 
-function mouseUpHandler(e) {
+window.mouseUpHandler = e => {
     let i;
     // var canvas_rectangle = canvas.getBoundingClientRect();
-    // mouse_x = e.clientX - canvas_rectangle.left;
-    // mouse_y = e.clientY - canvas_rectangle.top;
+    // mouseX = e.clientX - canvas_rectangle.left;
+    // mouseY = e.clientY - canvas_rectangle.top;
     // console.log("mouse up");
     if (controlMenu.isVisible && e.button === BUTTON_RIGHT) {
-        if (controlMenu.releaseEvent(mouse_x, mouse_y)) { redraw(); }
+        if (controlMenu.releaseEvent(mouseX, mouseY)) { redraw(); }
     } else if (radialMenu.isVisible && e.button === BUTTON_RIGHT) {
-        const returnValue = radialMenu.releaseEvent(mouse_x, mouse_y);
+        const returnValue = radialMenu.releaseEvent(mouseX, mouseY);
 
         const itemID = radialMenu.getIDOfSelection();
         if (itemID >= 0 && itemID < NUM_TOOL_MODES) {
@@ -991,9 +646,9 @@ function mouseUpHandler(e) {
                 break;
             case TOOL_MODE_RECT_SELECT:
                 // complete a rectangle selection
-                var selectedRectangle = new Box2(
+                var selectedRectangle = new Box2D(
                     draw2.convertPixelsToWorldSpaceUnits(new Vector2D(drag_start_x, drag_start_y)),
-                    draw2.convertPixelsToWorldSpaceUnits(new Vector2D(mouse_x, mouse_y))
+                    draw2.convertPixelsToWorldSpaceUnits(new Vector2D(mouseX, mouseY))
                 );
                 selectedStrokes = [];
                 for (i = 0; i < drawing.strokes.length; ++i) {
@@ -1007,23 +662,23 @@ function mouseUpHandler(e) {
         currentDragMode = DRAG_MODE_NONE;
         redraw();
     }
-}
+};
 
-function mouseMoveHandler(e) {
-    previous_mouse_x = mouse_x;
-    previous_mouse_y = mouse_y;
+const mouseMoveHandler = e => {
+    previousMouseX = mouseX;
+    previousMouseY = mouseY;
     const canvas_rectangle = canvas.getBoundingClientRect();
-    mouse_x = e.clientX - canvas_rectangle.left;
-    mouse_y = e.clientY - canvas_rectangle.top;
+    mouseX = e.clientX - canvas_rectangle.left;
+    mouseY = e.clientY - canvas_rectangle.top;
 
 
-    const delta_x = mouse_x - previous_mouse_x;
-    const delta_y = mouse_y - previous_mouse_y;
+    const deltaX = mouseX - previousMouseX;
+    const deltaY = mouseY - previousMouseY;
 
 
     if (controlMenu.isVisible) {
         if (controlMenu.isInMenuingMode) {
-            if (controlMenu.dragEvent(mouse_x, mouse_y)) { redraw(); }
+            if (controlMenu.dragEvent(mouseX, mouseY)) { redraw(); }
         } else {
             // use the drag event to change the appropriate parameter
             switch (controlMenu.getIDOfSelection()) {
@@ -1032,63 +687,72 @@ function mouseMoveHandler(e) {
                 case CONTROL_RECT_SELECT:
                     break;
                 case CONTROL_MOVE_SELECTION:
-                    var v = Vector2D.diff(
-                        draw2.convertPixelsToWorldSpaceUnits(new Vector2D(mouse_x, mouse_y)),
-                        draw2.convertPixelsToWorldSpaceUnits(new Vector2D(previous_mouse_x, previous_mouse_y))
+                    const vector = Vector2D.diff(
+                        draw2.convertPixelsToWorldSpaceUnits(new Vector2D(mouseX, mouseY)),
+                        draw2.convertPixelsToWorldSpaceUnits(new Vector2D(previousMouseX, previousMouseY))
                     );
-                    for (var i = 0; i < selectedStrokes.length; ++i) {
-                        selectedStrokes[i].translate(v);
-                    }
+                    selectedStrokes.forEach(stroke => stroke.translate(vector));
                     drawing.isBoundingRectangleDirty = true;
                     break;
                 case CONTROL_TRANSLATE:
-                    draw2.translate(delta_x, delta_y);
+                    draw2.translate(deltaX, deltaY);
                     break;
                 case CONTROL_ZOOM:
-                    draw2.zoomIn(Math.pow(zoomFactorPerPixelDragged, delta_x - delta_y), drag_start_x, drag_start_y);
+                    draw2.zoomIn(
+                        zoomFactorPerPixelDragged ** (deltaX - deltaY),
+                        drag_start_x,
+                        drag_start_y
+                    );
+                    break;
+                default:
                     break;
             }
             redraw();
         }
     } else if (radialMenu.isVisible) {
-        if (radialMenu.dragEvent(mouse_x, mouse_y)) { redraw(); }
-    } else if (currentDragMode == DRAG_MODE_TRANSLATE) {
-        draw2.translate(delta_x, delta_y);
+        if (radialMenu.dragEvent(mouseX, mouseY)) { redraw(); }
+    } else if (currentDragMode === DRAG_MODE_TRANSLATE) {
+        draw2.translate(deltaX, deltaY);
         redraw();
-    } else if (currentDragMode == DRAG_MODE_ZOOM) {
-        draw2.zoomIn(Math.pow(zoomFactorPerPixelDragged, delta_x - delta_y), drag_start_x, drag_start_y);
+    } else if (currentDragMode === DRAG_MODE_ZOOM) {
+        draw2.zoomIn(Math.pow(zoomFactorPerPixelDragged, deltaX - deltaY), drag_start_x, drag_start_y);
         redraw();
-    } else if (currentDragMode == DRAG_MODE_TOOL) {
+    } else if (currentDragMode === DRAG_MODE_TOOL) {
         switch (currentToolMode) {
             case TOOL_MODE_PENCIL:
-                mouseHistory.push(new Vector2D(mouse_x, mouse_y));
+                mouseHistory.push(new Vector2D(mouseX, mouseY));
                 break;
             case TOOL_MODE_RECT_SELECT:
                 break;
-            case TOOL_MODE_MOVE_SELECTION:
-                var v = Vector2D.diff(
-                    draw2.convertPixelsToWorldSpaceUnits(new Vector2D(mouse_x, mouse_y)),
-                    draw2.convertPixelsToWorldSpaceUnits(new Vector2D(previous_mouse_x, previous_mouse_y))
+            case TOOL_MODE_MOVE_SELECTION: {
+                const vector = Vector2D.diff(
+                    draw2.convertPixelsToWorldSpaceUnits(new Vector2D(mouseX, mouseY)),
+                    draw2
+                        .convertPixelsToWorldSpaceUnits(new Vector2D(
+                            previousMouseX,
+                            previousMouseY
+                        ))
                 );
-                for (var i = 0; i < selectedStrokes.length; ++i) {
-                    selectedStrokes[i].translate(v);
-                }
+                selectedStrokes.forEach(stroke => stroke.translate(vector));
                 drawing.isBoundingRectangleDirty = true;
+                break;
+            }
+            default:
                 break;
         }
         redraw();
     } else if (showMouseCoordinates) {
         redraw();
     }
-}
+};
 
 canvas.addEventListener('mousedown', mouseDownHandler);
 canvas.addEventListener('mouseup', mouseUpHandler);
 canvas.addEventListener('mousemove', mouseMoveHandler);
-canvas.oncontextmenu = function (e) { return false; }; // disable the right-click menu
+canvas.oncontextmenu = () => false; // disable the right-click menu
 
 
-function setToolMode(toolMode, updateRadioButtons = false) {
+window.setToolMode = (toolMode, updateRadioButtons = false) => {
     currentToolMode = toolMode;
     mouseHistory = [];
     if (updateRadioButtons) {
@@ -1106,14 +770,14 @@ function setToolMode(toolMode, updateRadioButtons = false) {
         }
         document.getElementById(idString).checked = true;
     }
-}
+};
 
-function frameAllButtonHandler() {
+window.frameAllButtonHandler = () => {
     draw2.frame(drawing.getBoundingRectangle(), true);
     redraw();
-}
+};
 
-function deleteSelectionButtonHandler() {
+window.deleteSelectionButtonHandler = () => {
     for (let i = selectedStrokes.length - 1; i >= 0; --i) {
         const j = drawing.strokes.indexOf(selectedStrokes[i]);
         if (j >= 0)
@@ -1124,12 +788,13 @@ function deleteSelectionButtonHandler() {
     drawing.isBoundingRectangleDirty = true;
 
     redraw();
-}
-function deleteAllButtonHandler() {
+};
+
+window.deleteAllButtonHandler = () => {
     selectedStrokes = [];
     // this should really be moved into a method in the Drawing prototype
     drawing.strokes = [];
     drawing.isBoundingRectangleDirty = true;
 
     redraw();
-}
+};
