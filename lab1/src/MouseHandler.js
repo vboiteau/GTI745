@@ -59,6 +59,14 @@ class MouseHandler {
     up(e) {
         if (e.target.controlMenu.isVisible && e.button === BUTTON.RIGHT) {
             if (e.target.controlMenu.releaseEvent(this.mouseState.mouseX, this.mouseState.mouseY)) {
+                const itemLabel = e.target.controlMenu.label[e.target.controlMenu.getSelection()];
+
+                const itemID = e.target.radialMenu.getItemIDForLabel(itemLabel);
+
+                if (itemID || itemID === 0) {
+                    e.target.setToolMode(itemID, true);
+                }
+
                 e.target.redraw();
             }
         } else if (e.target.radialMenu.isVisible && e.button === BUTTON.RIGHT) {
