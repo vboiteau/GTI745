@@ -12,10 +12,7 @@
     "webpack": "^3.10.0"
   },
   "scripts": {
-    "build": "webpack",
-    "lint": "eslint src",
-    "start": "browser-sync start --server 'dist' --files dist --no-open --no-notify",
-    "watch": "concurrently --kill-others \"webpack --watch\" \"npm start\""
+    "start": "browser-sync start --server '.' --files index.html --no-open --no-notify"
   },
   "devDependencies": {
     "browser-sync": "^2.23.5",
