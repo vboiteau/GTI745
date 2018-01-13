@@ -60,6 +60,14 @@ class Stroke {
     draw(draw2) {
         draw2.drawPolyline(this.points);
     }
+
+    copy(initial) {
+        initial.points.forEach(point => {
+            const newPoint = new Vector2D();
+            newPoint.copy(point);
+            this.pushPoint(newPoint);
+        });
+    }
 }
 
 export default Stroke;

@@ -32,6 +32,9 @@ Object.assign(window, {
     deleteAllButtonHandler() {
         canvas.deleteAll();
     },
+    duplicateSelectionButtonHandler() {
+        canvas.duplicateSelection();
+    },
     exposedToolModes: {
         TOOL_MODE_PENCIL: TOOL_MODE.PENCIL,
         TOOL_MODE_RECT_SELECT: TOOL_MODE.RECT_SELECT,
