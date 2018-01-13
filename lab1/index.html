@@ -1295,7 +1295,7 @@ function mouseUpHandler(e) {
 		var itemID = radialMenu.getIDOfSelection();
     console.log(itemID);
 		if ( 0 <= itemID && itemID < NUM_TOOL_MODES ) {
-			setToolMode(itemID,true);
+			e.target.setToolMode(itemID,true);
 		}
 
 		if ( returnValue )
