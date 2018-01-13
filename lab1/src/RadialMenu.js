@@ -114,7 +114,6 @@ class RadialMenu {
     }
 
     setEnabledByID(flag, target) {
-        console.log(target);
         this.itemID.forEach((id, i) => {
             if (target === id) {
                 this.isEnabled[i] = flag;
@@ -280,14 +279,12 @@ class RadialMenu {
         const radiusPrime = radius / Math.SQRT2;
 
         this.itemID.forEach((id, i) => {
-            console.log(this.isEnabled, i);
             if (this.label[i].length > 0 && this.isEnabled[i]) {
                 const theta = (i - 1) * Math.PI / 4 - Math.PI / 2;
                 // compute center of ith label
                 let x = ((i % 2) === 1 ? radius : radiusPrime) * Math.cos(theta) + this.x0;
                 let y = ((i % 2) === 1 ? radius : radiusPrime) * Math.sin(theta) + this.y0;
 
-                console.log(this.label);
                 if (i === 1 && this.label[2].length === 0 && this.label[7].length === 0) {
                     y = -radius / 2 + this.y0;
                 } else if (i === 5 && this.label[4].length === 0 && this.label[6].length === 0) {
