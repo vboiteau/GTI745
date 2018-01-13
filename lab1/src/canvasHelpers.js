@@ -1,4 +1,6 @@
+import Box2D from './Box2D';
 import Draw2D from './Draw2D';
+import Vector2D from './Vector2D';
 import RadialMenu from './RadialMenu';
 import ControlMenu from './ControlMenu';
 import Drawing from './Drawing';
@@ -22,6 +24,55 @@ const canvasHelpers = canvas => Object.assign(canvas, {
 
     toggleShowMouseCoordinates() {
         this.showMouseCoordinates = !this.showMouseCoordinates;
+    },
+
+    flipSelection(axe) {
+        const bounds = this.getSelectedStrokesBounds();
+        const isX = axe === 'X';
+
+        this.selectedStrokes = this.selectedStrokes.map(stroke => {
+            const index = this.drawing.strokes.indexOf(stroke);
+            stroke.points = stroke.points.map(({ x, y }) => new Vector2D(
+                isX ? x : bounds.max.x - x + bounds.min.x,
+                isX ? bounds.max.y - y + bounds.min.y : y
+            ));
+
+            this.drawing.strokes[index] = stroke;
+
+            return stroke;
+        });
+
+        this.redraw();
+    },
+
+    getSelectedStrokesBounds() {
+        const selectedStrokesBounds = this.selectedStrokes.reduce(({ min, max }, stroke) => {
+            const bounds = stroke.boundingRectangle;
+            return ({
+                min: {
+                    x: bounds.min.x < min.x ? bounds.min.x : min.x,
+                    y: bounds.min.y < min.y ? bounds.min.y : min.y
+                },
+                max: {
+                    x: bounds.max.x > max.x ? bounds.max.x : max.x,
+                    y: bounds.max.y > max.y ? bounds.max.y : max.y
+                }
+            });
+        }, {
+            min: {
+                x: Number.MAX_VALUE,
+                y: Number.MAX_VALUE
+            },
+            max: {
+                x: Number.MIN_VALUE,
+                y: Number.MIN_VALUE
+            }
+        });
+
+        return new Box2D(
+            new Vector2D(selectedStrokesBounds.min.x, selectedStrokesBounds.min.y),
+            new Vector2D(selectedStrokesBounds.max.x, selectedStrokesBounds.max.y)
+        );
     },
 
     redraw() {

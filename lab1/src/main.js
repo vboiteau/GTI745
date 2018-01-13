@@ -38,6 +38,9 @@ Object.assign(window, {
         TOOL_MODE_MOVE_SELECTION: TOOL_MODE.MOVE_SELECTION,
         TOOL_MODE_LINE: TOOL_MODE.LINE
     },
+    flipSelectionButtonHandler(axe) {
+        canvas.flipSelection(axe);
+    },
     frameAllButtonHandler() {
         canvas.frameAll();
     },

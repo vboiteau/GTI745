@@ -52,6 +52,9 @@ class MouseHandler {
         } else if (e.button === BUTTON.LEFT) {
             this.mouseState.clear();
             this.mouseState.push();
+            if (e.target.currentToolMode === TOOL_MODE.RECT_SELECT) {
+                e.target.selectedStrokes = [];
+            }
             this.currentDragMode = DRAG_MODE.TOOL;
         }
     }
