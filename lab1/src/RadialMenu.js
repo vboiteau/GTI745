@@ -133,6 +133,14 @@ class RadialMenu {
         return this.getItemID(this.selectedItem);
     }
 
+    getItemIDForLabel(label) {
+        return this.itemID[this.getIndexOfLabel(label)];
+    }
+
+    getIndexOfLabel(query) {
+        return this.label.findIndex(label => label === query);
+    }
+
     pressEvent(x, y) {
         this.x0 = x;
         this.mouseX = x;

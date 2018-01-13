@@ -109,6 +109,7 @@ const canvasHelpers = canvas => Object.assign(canvas, {
     },
 
     setToolMode(toolMode, updateRadioButtons = false) {
+        console.debug(toolMode);
         this.currentToolMode = toolMode;
         this.mouseHandler.mouseState.clear();
         if (updateRadioButtons) {
@@ -129,7 +130,10 @@ const canvasHelpers = canvas => Object.assign(canvas, {
                 default:
                     break;
             }
-            document.getElementById(idString).checked = true;
+            const checkbox = document.getElementById(idString);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
         }
     },
 
