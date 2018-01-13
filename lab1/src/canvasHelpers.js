@@ -4,6 +4,7 @@ import Vector2D from './Vector2D';
 import RadialMenu from './RadialMenu';
 import ControlMenu from './ControlMenu';
 import Drawing from './Drawing';
+import Stroke from './Stroke';
 import MouseHandler from './MouseHandler';
 import { DRAG_MODE, TOOL_MODE } from './modes';
 
@@ -24,6 +25,16 @@ const canvasHelpers = canvas => Object.assign(canvas, {
 
     toggleShowMouseCoordinates() {
         this.showMouseCoordinates = !this.showMouseCoordinates;
+    },
+
+    duplicateSelection() {
+        this.selectedStrokes.forEach(original => {
+            const newStroke = new Stroke();
+            newStroke.copy(original);
+            this.drawing.pushStroke(newStroke);
+        });
+
+        this.redraw();
     },
 
     flipSelection(axe) {
@@ -160,7 +171,6 @@ const canvasHelpers = canvas => Object.assign(canvas, {
     },
 
     setToolMode(toolMode, updateRadioButtons = false) {
-        console.debug(toolMode);
         this.currentToolMode = toolMode;
         this.mouseHandler.mouseState.clear();
         if (updateRadioButtons) {
