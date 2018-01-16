@@ -12,7 +12,8 @@
     "webpack": "^3.10.0"
   },
   "scripts": {
-    "start": "browser-sync start --server '.' --files index.html --no-open --no-notify"
+    "build": "webpack",
+    "start": "npm run build && browser-sync start --server 'dist' --files dist --no-open --no-notify"
   },
   "devDependencies": {
     "browser-sync": "^2.23.5",

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+</html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <link rel="stylesheet" href="css/styles.css" type="text/css" media="screen" title="no title" charset="utf-8">
+</head>
+
+<body>
+  <p>
+  Right: radial menu&nbsp; &nbsp; Shift+Right: control menu
+  </p>
+  <canvas id="myCanvas" width="600" height="500" style="border:2px solid #000000;"></canvas>
+  <p>
+  <label for="TOOL_MODE_PENCIL">Pencil</label>
+  <input id="TOOL_MODE_PENCIL" type="radio" name="radio_mode" onclick="setToolMode(exposedToolModes.TOOL_MODE_PENCIL);" checked="" />
+  <label for="TOOL_MODE_LINE">Line</label>
+  <input id="TOOL_MODE_LINE" type="radio" name="radio_mode" onclick="setToolMode(exposedToolModes.TOOL_MODE_LINE);"/>
+  <label for="TOOL_MODE_RECT_SELECT">Rectangle Select</label>
+  <input id="TOOL_MODE_RECT_SELECT" type="radio" name="radio_mode" onclick="setToolMode(exposedToolModes.TOOL_MODE_RECT_SELECT);"/>
+  <label for="TOOL_MODE_MOVE_SELECTION">Move Selection</label>
+  <input id="TOOL_MODE_MOVE_SELECTION" type="radio" name="radio_mode" onclick="setToolMode(exposedToolModes.TOOL_MODE_MOVE_SELECTION);"/>
+  </p>
+  <p>
+  <label for="PENCIL_MODE_SYMETRY">
+    Symetry
+  </label>
+  <input id="PENCIL_MODE_SYMETRY" type="checkbox" name="PENCIL_MODE_SYMETRY" onclick="toggleDrawSymetry()"/>
+  </p>
+  <p>
+  <button onclick="frameAllButtonHandler()">Frame All</button>
+  <button onclick="deleteSelectionButtonHandler()">Delete Selection</button>
+  <button onclick="flipSelectionButtonHandler('X')">Flip X</button>
+  <button onclick="flipSelectionButtonHandler('Y')">Flip Y</button>
+  <button onclick="duplicateSelectionButtonHandler()">Duplicate Selection</button>
+  </p>
+  <p>
+  <button onclick="deleteAllButtonHandler()">Delete All</button>
+  </p>
+  <p>
+  <label for="SHOW_MOUSE">Show mouse coordinates (debug info)</label>
+  <input type="checkbox" id="SHOW_MOUSE" onclick="toggleShowMouseCoordinates()"/>
+  </p>
+
+  <script src="bundle.js"></script>
+
+  <pre>
+Left: tool &nbsp; &nbsp; Shift+Left: translate &nbsp; &nbsp; Ctrl+Left: zoom
+  </pre>
+</body>
+</html>
