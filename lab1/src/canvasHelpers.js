@@ -41,17 +41,22 @@ const canvasHelpers = canvas => Object.assign(canvas, {
         const bounds = this.getSelectedStrokesBounds();
         const isX = axe === 'X';
 
-        this.selectedStrokes = this.selectedStrokes.map(stroke => {
+        const newSelectedStrokes = this.selectedStrokes.map(stroke => {
+            const newStroke = new Stroke();
             const index = this.drawing.strokes.indexOf(stroke);
-            stroke.points = stroke.points.map(({ x, y }) => new Vector2D(
+            newStroke.points = stroke.points.map(({ x, y }) => new Vector2D(
                 isX ? x : bounds.max.x - x + bounds.min.x,
                 isX ? bounds.max.y - y + bounds.min.y : y
             ));
 
-            this.drawing.strokes[index] = stroke;
+            this.drawing.strokes[index] = newStroke;
 
-            return stroke;
+            return newStroke;
         });
+
+        this.selectedStrokes = [];
+
+        this.selectedStrokes = newSelectedStrokes;
 
         this.redraw();
     },
