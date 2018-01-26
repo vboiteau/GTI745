@@ -9,6 +9,7 @@ var flatShading = false;
 
 var drawAxes = true;
 var drawTarget = true;
+var drawBoundingBox = false;
 
 var keydown;
 
@@ -588,7 +589,11 @@ function Cam3() {
 }
 
 Cam3.prototype = {
-	reset : function() {
+	reset : function(box3_scene = null) {
+		if(box3_scene !== null){
+			this.sceneCenter = box3_scene.center();
+			this.sceneRadius = 0.5 * box3_scene.diagonal().norm();
+		}
 		var tangent = Math.tan( this.fieldOfViewInDegrees/2 / 180 * Math.PI );
 		// viewportRadiusInWorldSpaceUnits = this.nearPlane * tangent;
 		var distanceFromTarget = this.sceneRadius / tangent;
@@ -1088,7 +1093,11 @@ var redraw = function() {
 			pushBoxToRender( boxes[i], fillFrontfaces, color_fill, drawWireframe, color_wireframe );
         }
 	}
-
+	if ( drawBoundingBox ) {
+		var color = new Color(0 ,1, 0, 0.5);
+		pushBoxToRender(boundingBoxOfScene, fillFrontfaces, color, drawWireframe, color_wireframe);
+	}
+	
 	if ( drawTarget ) {
 		pushLineSegmentToRender( Vec3.sum(camera.target,new Vec3(-0.5,0,0)), Vec3.sum(camera.target,new Vec3(0.5,0,0)), color_cameraTarget );
 		pushLineSegmentToRender( Vec3.sum(camera.target,new Vec3(0,-0.5,0)), Vec3.sum(camera.target,new Vec3(0,0.5,0)), color_cameraTarget );
@@ -1322,13 +1331,22 @@ document.getElementById('drawAxes').addEventListener('click', e => {
 });
 
 document.getElementById('resetTarget').addEventListener('click', e => {
-    camera.reset();
+	for ( var i = 0; i < boxes.length; ++i ) {
+		boundingBoxOfScene.boundBox( boxes[i] );
+	}
+	camera.reset(boundingBoxOfScene);
     redraw();
 });
 
 document.getElementById('flatShading').addEventListener('click', e => {
     flatShading = e.target.checked;
     redraw();
+});
+
+
+document.getElementById('drawBoundingBox').addEventListener('click', e => {
+	drawBoundingBox = e.target.checked;
+	redraw();
 });
 
 document.getElementById('drawTarget').addEventListener('click', e => {
@@ -1346,4 +1364,3 @@ document.getElementById('addBox').addEventListener('click', e => {
 
 	redraw();
 });
-
