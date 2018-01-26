@@ -663,17 +663,18 @@ Cam3.prototype = {
 		var distanceFromTarget = p2t.norm();
 		var forward = p2t.normalize();
 
-		var dollyDistance = delta_pixels / 100;
+        var dollyDistance = (delta_pixels / 100) * (distanceFromTarget / 50);
 
-		var new_distanceFromTarget = distanceFromTarget - dollyDistance;
-		if ( new_distanceFromTarget < this.pushThreshold ) {
-			new_distanceFromTarget = this.pushThreshold;
-		}
+        var new_distanceFromTarget = Math.max(this.pushThreshold,distanceFromTarget - dollyDistance);
+        if (new_distanceFromTarget === this.pushThreshold) {
+           return; 
+        }
 
 		this.nearPlane = new_distanceFromTarget / 30;
 
 		this.position = Vec3.sum( this.position, Vec3.mult(forward,dollyDistance) );
-		this.target = Vec3.sum( this.position, Vec3.mult(forward,new_distanceFromTarget) );
+        // this.target = Vec3.sum( this.position, Vec3.mult(forward,new_distanceFromTarget) );
+        redraw();
 	},
 	// Computes the pixel covering the given point.
 	// Returns an object of the form {x_pixels, y_pixels, depth}
@@ -1185,7 +1186,7 @@ canvas.addEventListener('mousemove',mouseMoveHandler);
 
 canvas.onwheel = e => (
     e.ctrlKey ?
-    camera.translateCameraForward(e.wheelDelta * 0.05) :
+    camera.translateCameraForward(e.wheelDelta) :
     console.log('no ctrl')
 );
 
@@ -1206,8 +1207,8 @@ document.getElementById('drawWireframe').addEventListener('click', e => {
     redraw();
 });
 
-document.getElementById('fillFontfaces').addEventListener('click', e => {
-    fillFontfaces = e.target.checked;
+document.getElementById('fillFrontfaces').addEventListener('click', e => {
+    fillFrontfaces = e.target.checked;
     redraw();
 });
 
