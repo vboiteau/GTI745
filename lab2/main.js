@@ -11,6 +11,18 @@ var drawAxes = true;
 var drawTarget = true;
 var drawBoundingBox = false;
 
+var keydown;
+
+
+document.addEventListener('keydown', function(evt){
+   var evt = evt || window.event;
+   
+   keydown = evt.keyCode
+
+
+},false);
+
+
 // ============================================================
 // Vec3 objects are for storing 3D points and 3D vectors.
 // To create a new instance, use the new keyword:
@@ -1144,6 +1156,7 @@ function mouseMoveHandler(e) {
 	var mouse_y = e.clientY - canvas_rectangle.top;
 	var delta_x = mouse_x - old_mouse_x;
 	var delta_y = mouse_y - old_mouse_y;
+
 	if ( e.ctrlKey ) {
 		// move the camera
 		if ( e.buttons === BUTTONS_BIT_LEFT ) {
@@ -1156,9 +1169,89 @@ function mouseMoveHandler(e) {
 			camera.translateCameraForward( delta_x - delta_y );
 		}
 	}
+	//Shift Click for resizing shape
+	else if ( e.shiftKey ){
+
+		if ( e.buttons === BUTTONS_BIT_LEFT ) {
+			
+			if ( raycast_indexOfIntersectedBox >= 0 ) {
+
+				const MULTIPLIER = 10;
+
+				var box = boxes[raycast_indexOfIntersectedBox];
+				var norm = raycast_normalAtIntersection;
+
+				var ray1 = camera.computeRay(old_mouse_x,old_mouse_y);
+				var ray2 = camera.computeRay(mouse_x,mouse_y);
+
+				var diff = Vec3.diff(ray2.origin, ray1.origin);
+
+
+
+				if( norm.x != 0)
+				{
+					console.log("X")
+
+					if ( norm.x === 1 ){
+						console.log("Forward");
+
+						box.max.x += diff.x*MULTIPLIER;
+
+					}
+					else{
+						console.log("Backward");
+
+						box.min.x += diff.x*MULTIPLIER;
+					}
+
+				}
+				else if( norm.y != 0 ){
+
+					console.log("Y")
+
+					if ( norm.y === 1 ){
+
+						console.log("Forward");
+
+						box.max.y += diff.y*MULTIPLIER;
+					}
+					else{
+
+						console.log("Backward");
+
+						box.min.y += diff.y*MULTIPLIER;
+					}
+
+				}
+				else if ( norm.z != 0 ){
+
+					console.log("Z");
+
+					if ( norm.z === 1 ){
+						console.log("Forward");
+
+						box.max.z += diff.z*MULTIPLIER;
+
+					}
+					else{
+						console.log("Backward");
+
+						box.min.z += diff.z*MULTIPLIER;
+					}
+
+				}
+
+
+			}
+
+
+
+		}
+	}
 	else if ( e.buttons === BUTTONS_BIT_LEFT ) {
-		// move the box under the cursor
+
 		if ( raycast_indexOfIntersectedBox >= 0 ) {
+
 			var ray1 = camera.computeRay(old_mouse_x,old_mouse_y);
 			var ray2 = camera.computeRay(mouse_x,mouse_y);
 			var plane = new Plane( raycast_normalAtIntersection, raycast_intersectionPoint );
@@ -1170,6 +1263,7 @@ function mouseMoveHandler(e) {
 				boxes[raycast_indexOfIntersectedBox].max = Vec3.sum( boxes[raycast_indexOfIntersectedBox].max, translationVector );
 			}
 		}
+
 	}
 	else {
 		// perform raycast to find the intersected box
@@ -1249,7 +1343,24 @@ document.getElementById('flatShading').addEventListener('click', e => {
     redraw();
 });
 
+
 document.getElementById('drawBoundingBox').addEventListener('click', e => {
 	drawBoundingBox = e.target.checked;
+	redraw();
+});
+
+document.getElementById('drawTarget').addEventListener('click', e => {
+	drawTarget = e.target.checked;
+	redraw();
+});
+
+document.getElementById('addBox').addEventListener('click', e => {
+	//boxes.push( new Box3( new Vec3(0,0,0), new Vec3(1,1,1) ) );
+	
+	var vec_min = Vec3.sum(camera.target, new Vec3(-0.5, -0.5, -0.5) );
+	var vec_max = Vec3.sum(camera.target, new Vec3(0.5, 0.5, 0.5) );
+
+	boxes.push( new Box3(vec_min ,vec_max) );
+
 	redraw();
 });
