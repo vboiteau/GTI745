@@ -924,10 +924,12 @@ var renderPolygons = function( camera, canvas, canvas_context ) {
                 Vec3.diff( poly.v[2], poly.v[1] )
             ).normalize();
 
-            var dotProduct = Vec3.dot(
+            var dotProduct = flatShading ?
+                Vec3.dot(
                 Vec3.diff( poly.v[0], camera.position ).normalize(),
                 faceNormal
-            );
+                ) :
+                -1;
 
 			if ( poly.isFill )
 				canvas_context.fillStyle = Color.mult(poly.fillColor, (dotProduct * -1) * .75  + .25).toString();
@@ -1180,6 +1182,13 @@ function mouseMoveHandler(e) {
 canvas.addEventListener('mousedown',mouseDownHandler);
 canvas.addEventListener('mouseup',mouseUpHandler);
 canvas.addEventListener('mousemove',mouseMoveHandler);
+
+canvas.onwheel = e => (
+    e.ctrlKey ?
+    camera.translateCameraForward(e.wheelDelta * 0.05) :
+    console.log('no ctrl')
+);
+
 canvas.oncontextmenu = function(e){ return false; }; // disable the right-click menu
 
 document.getElementById('perspectiveProjection').addEventListener('click', e => {
