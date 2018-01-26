@@ -299,6 +299,10 @@ Box3.prototype = {
 		this.boundPoint( box.min );
 		this.boundPoint( box.max );
 	},
+	reset : function() {
+		this.min = new Vec3();
+		this.max = new Vec3();
+	},
 	// This tests for intersection between the given ray and the box.
 	// If there is no intersection, it returns null.
 	// If there is an intersection, it returns
@@ -1086,7 +1090,11 @@ var worldSpaceZAxisColor = new Color(0,0,1);
 var redraw = function() {
 	var i;
 	clearPolygonsToRender();
+
+	boundingBoxOfScene.reset();
 	for ( i = 0; i < boxes.length; ++i ) {
+		boundingBoxOfScene.boundBox( boxes[i] );
+
 		if ( i === raycast_indexOfIntersectedBox ) {
 			pushBoxToRender( boxes[i], fillFrontfaces, color_fill, true, color_highlight );
         } else {
@@ -1331,9 +1339,6 @@ document.getElementById('drawAxes').addEventListener('click', e => {
 });
 
 document.getElementById('resetTarget').addEventListener('click', e => {
-	for ( var i = 0; i < boxes.length; ++i ) {
-		boundingBoxOfScene.boundBox( boxes[i] );
-	}
 	camera.reset(boundingBoxOfScene);
     redraw();
 });
