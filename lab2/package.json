@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "start": "browser-sync start -s . -f . --no-open"
+  },
+  "dependencies": {
+    "browser-sync": "^2.23.6"
+  }
+}

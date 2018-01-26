@@ -5,6 +5,7 @@ var cullBackfaces = true;
 var drawWireframe = true;
 var fillFrontfaces = true;
 var	sortPolygons = true;
+var flatShading = false;
 
 var drawAxes = true;
 var drawTarget = true;
@@ -674,17 +675,18 @@ Cam3.prototype = {
 		var distanceFromTarget = p2t.norm();
 		var forward = p2t.normalize();
 
-		var dollyDistance = delta_pixels / 100;
+        var dollyDistance = (delta_pixels / 100) * (distanceFromTarget / 50);
 
-		var new_distanceFromTarget = distanceFromTarget - dollyDistance;
-		if ( new_distanceFromTarget < this.pushThreshold ) {
-			new_distanceFromTarget = this.pushThreshold;
-		}
+        var new_distanceFromTarget = Math.max(this.pushThreshold,distanceFromTarget - dollyDistance);
+        if (new_distanceFromTarget === this.pushThreshold) {
+           return; 
+        }
 
 		this.nearPlane = new_distanceFromTarget / 30;
 
 		this.position = Vec3.sum( this.position, Vec3.mult(forward,dollyDistance) );
-		this.target = Vec3.sum( this.position, Vec3.mult(forward,new_distanceFromTarget) );
+        // this.target = Vec3.sum( this.position, Vec3.mult(forward,new_distanceFromTarget) );
+        redraw();
 	},
 	// Computes the pixel covering the given point.
 	// Returns an object of the form {x_pixels, y_pixels, depth}
@@ -923,12 +925,27 @@ var renderPolygons = function( camera, canvas, canvas_context ) {
 	for ( i=0; i < polygonsToRender.length; ++i ) {
 		poly = polygonsToRender[i];
 
-		if ( poly.isCulled || ( ! poly.isFrontFace && cullBackfaces ) )
-			continue;
+
+
+        if ( poly.isCulled || ( ! poly.isFrontFace && cullBackfaces ) ) {
+            continue;
+        }
 
 		if ( poly.v.length >= 3 ) {
+            var faceNormal = Vec3.cross(
+                Vec3.diff( poly.v[1], poly.v[0] ),
+                Vec3.diff( poly.v[2], poly.v[1] )
+            ).normalize();
+
+            var dotProduct = flatShading ?
+                Vec3.dot(
+                Vec3.diff( poly.v[0], camera.position ).normalize(),
+                faceNormal
+                ) :
+                -1;
+
 			if ( poly.isFill )
-				canvas_context.fillStyle = poly.fillColor.toString();
+				canvas_context.fillStyle = Color.mult(poly.fillColor, (dotProduct * -1) * .75  + .25).toString();
 			if ( poly.isOutline )
 				canvas_context.strokeStyle = poly.outlineColor.toString();
 			canvas_context.beginPath();
@@ -1065,10 +1082,11 @@ var redraw = function() {
 	var i;
 	clearPolygonsToRender();
 	for ( i = 0; i < boxes.length; ++i ) {
-		if ( i === raycast_indexOfIntersectedBox )
+		if ( i === raycast_indexOfIntersectedBox ) {
 			pushBoxToRender( boxes[i], fillFrontfaces, color_fill, true, color_highlight );
-		else
+        } else {
 			pushBoxToRender( boxes[i], fillFrontfaces, color_fill, drawWireframe, color_wireframe );
+        }
 	}
 
 	if ( drawTarget ) {
@@ -1259,6 +1277,13 @@ function mouseMoveHandler(e) {
 canvas.addEventListener('mousedown',mouseDownHandler);
 canvas.addEventListener('mouseup',mouseUpHandler);
 canvas.addEventListener('mousemove',mouseMoveHandler);
+
+canvas.onwheel = e => (
+    e.ctrlKey ?
+    camera.translateCameraForward(e.wheelDelta) :
+    console.log('no ctrl')
+);
+
 canvas.oncontextmenu = function(e){ return false; }; // disable the right-click menu
 
 document.getElementById('perspectiveProjection').addEventListener('click', e => {
@@ -1276,8 +1301,8 @@ document.getElementById('drawWireframe').addEventListener('click', e => {
     redraw();
 });
 
-document.getElementById('fillFontfaces').addEventListener('click', e => {
-    fillFontfaces = e.target.checked;
+document.getElementById('fillFrontfaces').addEventListener('click', e => {
+    fillFrontfaces = e.target.checked;
     redraw();
 });
 
@@ -1298,6 +1323,11 @@ document.getElementById('drawAxes').addEventListener('click', e => {
 
 document.getElementById('resetTarget').addEventListener('click', e => {
     camera.reset();
+    redraw();
+});
+
+document.getElementById('flatShading').addEventListener('click', e => {
+    flatShading = e.target.checked;
     redraw();
 });
 
