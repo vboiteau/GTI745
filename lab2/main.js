@@ -1227,3 +1227,19 @@ document.getElementById('flatShading').addEventListener('click', e => {
     redraw();
 });
 
+document.getElementById('drawTarget').addEventListener('click', e => {
+	drawTarget = e.target.checked;
+	redraw();
+});
+
+document.getElementById('addBox').addEventListener('click', e => {
+	//boxes.push( new Box3( new Vec3(0,0,0), new Vec3(1,1,1) ) );
+	
+	var vec_min = Vec3.sum(camera.target, new Vec3(-0.5, -0.5, -0.5) );
+	var vec_max = Vec3.sum(camera.target, new Vec3(0.5, 0.5, 0.5) );
+
+	boxes.push( new Box3(vec_min ,vec_max) );
+
+	redraw();
+});
+
