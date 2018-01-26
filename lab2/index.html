@@ -16,18 +16,28 @@
 
     <canvas id="myCanvas" width="800" height="600" style="border:2px solid #000000;"></canvas>
       <p>
-      <label><input type='checkbox' id="perspectiveProjection" name="perspectiveProjection" checked>Perspective projection</label>
-      <label><input type='checkbox' id="cullBackFaces" name="cullBackfaces" checked>Cull backfaces</label>
-      <label><input type='checkbox' id="drawWireframe" name="drawWireframe" onclick='drawWireframe=this.checked; redraw();' checked>Draw wireframe</label>
-      <label><input type='checkbox' id="fillFontfaces" name="fillFontfaces" checked>Fill frontfaces</label>
+      <input type="checkbox" id="perspectiveProjection" name="perspectiveProjection" checked />
+      <label for="perspectiveProjection">Perspective projection</label>
+      <input type="checkbox" id="cullBackFaces" name="cullBackfaces" checked />
+      <label for="cullBackFaces">Cull backfaces</label>
+      <input type="checkbox" id="drawWireframe" name="drawWireframe" checked />
+      <label for="drawWireframe">Draw wireframe</label>
+      <input type="checkbox" id="fillFontfaces" name="fillFontfaces" checked />
+      <label for="fillFontfaces">Fill frontfaces</label>
       </p>
       <p>
-      <label><input type='checkbox' id="color_fill" name="color_fill">Transparent faces</label>
-      <label><input type='checkbox' id="sortPolygons" name="sortPolygons" checked>Sort polygons in depth order (painter's algorithm)</label>
+      <input type="checkbox" name="flatShading" id="flatShading"/>
+      <label for="flatShading">Flat Shading</label>
+      <input type="checkbox" id="color_fill" name="color_fill" />
+      <label for="color_fill">Transparent faces</label>
+      <input type="checkbox" id="sortPolygons" name="sortPolygons" checked/>
+      <label for="sortPolygons">Sort polygons in depth order (painter's algorithm)</label>
       </p>
       <p>
-      <label><input id="drawAxes" name="drawAxes" type='checkbox' checked>Draw world space axes</label>
-      <label><input id="drawTarget" name="drawTarget" type='checkbox' checked>Draw camera target</label>
+      <input id="drawAxes" name="drawAxes" type="checkbox" checked/>
+      <label for="drawAxes">Draw world space axes</label>
+      <input id="drawTarget" name="drawTarget" type='checkbox' checked/>
+      <label for="drawTarget">Draw camera target</label>
       <button id="resetTarget" name="resetCamera">Reset Camera</button>
       </p>
 

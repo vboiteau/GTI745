@@ -5,6 +5,7 @@ var cullBackfaces = true;
 var drawWireframe = true;
 var fillFrontfaces = true;
 var	sortPolygons = true;
+var flatShading = false;
 
 var drawAxes = true;
 var drawTarget = true;
@@ -911,12 +912,25 @@ var renderPolygons = function( camera, canvas, canvas_context ) {
 	for ( i=0; i < polygonsToRender.length; ++i ) {
 		poly = polygonsToRender[i];
 
-		if ( poly.isCulled || ( ! poly.isFrontFace && cullBackfaces ) )
-			continue;
+
+
+        if ( poly.isCulled || ( ! poly.isFrontFace && cullBackfaces ) ) {
+            continue;
+        }
 
 		if ( poly.v.length >= 3 ) {
+            var faceNormal = Vec3.cross(
+                Vec3.diff( poly.v[1], poly.v[0] ),
+                Vec3.diff( poly.v[2], poly.v[1] )
+            ).normalize();
+
+            var dotProduct = Vec3.dot(
+                Vec3.diff( poly.v[0], camera.position ).normalize(),
+                faceNormal
+            );
+
 			if ( poly.isFill )
-				canvas_context.fillStyle = poly.fillColor.toString();
+				canvas_context.fillStyle = Color.mult(poly.fillColor, (dotProduct * -1) * .75  + .25).toString();
 			if ( poly.isOutline )
 				canvas_context.strokeStyle = poly.outlineColor.toString();
 			canvas_context.beginPath();
@@ -1053,10 +1067,11 @@ var redraw = function() {
 	var i;
 	clearPolygonsToRender();
 	for ( i = 0; i < boxes.length; ++i ) {
-		if ( i === raycast_indexOfIntersectedBox )
+		if ( i === raycast_indexOfIntersectedBox ) {
 			pushBoxToRender( boxes[i], fillFrontfaces, color_fill, true, color_highlight );
-		else
+        } else {
 			pushBoxToRender( boxes[i], fillFrontfaces, color_fill, drawWireframe, color_wireframe );
+        }
 	}
 
 	if ( drawTarget ) {
@@ -1204,6 +1219,11 @@ document.getElementById('drawAxes').addEventListener('click', e => {
 
 document.getElementById('resetTarget').addEventListener('click', e => {
     camera.reset();
+    redraw();
+});
+
+document.getElementById('flatShading').addEventListener('click', e => {
+    flatShading = e.target.checked;
     redraw();
 });
 
