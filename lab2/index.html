@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>lab2</title>
+  </head>
+  <body>
+    <p>Ctrl+Left: orbit camera </p>
+
+    <p>Ctrl+Right: translate camera left/right/up/down </p>
+
+    <p>Ctrl+Left+Right: translate camera forward/backward </p>
+
+    <p>Left: move box within plane of face under cursor</p>
+
+    <canvas id="myCanvas" width="800" height="600" style="border:2px solid #000000;"></canvas>
+      <p>
+      <input type="checkbox" id="perspectiveProjection" name="perspectiveProjection" checked />
+      <label for="perspectiveProjection">Perspective projection</label>
+      <input type="checkbox" id="cullBackFaces" name="cullBackfaces" checked />
+      <label for="cullBackFaces">Cull backfaces</label>
+      <input type="checkbox" id="drawWireframe" name="drawWireframe" checked />
+      <label for="drawWireframe">Draw wireframe</label>
+      <input type="checkbox" id="fillFrontfaces" name="fillFrontfaces" checked />
+      <label for="fillFrontfaces">Fill frontfaces</label>
+      </p>
+      <p>
+      <input type="checkbox" name="flatShading" id="flatShading"/>
+      <label for="flatShading">Flat Shading</label>
+      <input type="checkbox" id="color_fill" name="color_fill" />
+      <label for="color_fill">Transparent faces</label>
+      <input type="checkbox" id="sortPolygons" name="sortPolygons" checked/>
+      <label for="sortPolygons">Sort polygons in depth order (painter's algorithm)</label>
+      </p>
+      <p>
+      <input id="drawAxes" name="drawAxes" type="checkbox" checked/>
+      <label for="drawAxes">Draw world space axes</label>
+      <input id="drawTarget" name="drawTarget" type='checkbox' checked/>
+      <label for="drawTarget">Draw camera target</label>
+      <button id="resetTarget" name="resetCamera">Reset Camera</button>
+      </p>
+
+
+      <script src="main.js"></script>
+  </body>
+</html>
