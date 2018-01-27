@@ -276,6 +276,68 @@ Box3.prototype = {
 		);
 	},
 
+	// Gets the 4 enlarged corners related to the specific face.
+	cornersOfFace : function( vect3 ){
+		var v = [];
+		for ( var i = 0; i < 8; i++ )
+			v[i] = this.corner(i);
+
+		if (vect3.x !== 0) {
+			if (vect3.x > 0) {
+				var addXN = new Vec3(0.2, -0.5, -0.5); 	// Bas droite
+				var addXP = new Vec3(0.2, 0.5, 0.5);	// Haut Gauche
+				var addYN = new Vec3(0.2, 0.5, -0.5); 	// Haut droite
+				var addYP = new Vec3(0.2, -0.5, 0.5);	// Bas gauche
+
+				return [Vec3.sum(v[1],addXN), Vec3.sum(v[3], addYN), Vec3.sum(v[7], addXP), Vec3.sum(v[5], addYP)];
+			}
+			else {
+				var addXN = new Vec3(-0.2, -0.5, -0.5);	// Bas gauche
+				var addXP = new Vec3(-0.2, 0.5, 0.5);	// Haut Gauche
+				var addYN = new Vec3(-0.2, -0.5, 0.5);	// Bas droite
+				var addYP = new Vec3(-0.2, 0.5, -0.5);	// Haut droite
+
+				return [Vec3.sum(v[0],addXN), Vec3.sum(v[4], addYN), Vec3.sum(v[6], addXP), Vec3.sum(v[2], addYP)];
+			}
+		}
+		else if (vect3.y !== 0) {
+			if (vect3.y > 0) {
+				var addXN = new Vec3(-0.5, 0.2, -0.5);	// Haut gauche
+				var addXP = new Vec3(0.5, 0.2, 0.5);	// Bas droite
+				var addYN = new Vec3(-0.5, 0.2, 0.5);	// Bas Gauche
+				var addYP = new Vec3(0.5, 0.2, -0.5);	// Haut droite
+
+				return [Vec3.sum(v[2],addXN), Vec3.sum(v[6], addYN), Vec3.sum(v[7], addXP), Vec3.sum(v[3], addYP)];
+			}
+			else {
+				var addXN = new Vec3(-0.5, -0.2, -0.5);	// Bas gauche
+				var addXP = new Vec3(0.5, -0.2, 0.5);	// Haut droite
+				var addYN = new Vec3(0.5, -0.2, -0.5);	// Bas Droite
+				var addYP = new Vec3(-0.5, -0.2, 0.5); 	// Haut gauche
+
+				return [Vec3.sum(v[0],addXN), Vec3.sum(v[1], addYN), Vec3.sum(v[5], addXP), Vec3.sum(v[4], addYP)];
+			}
+		}
+		else {
+			if (vect3.z > 0) {
+				var addXN = new Vec3(-0.5, -0.5, 0.2);
+				var addXP = new Vec3(0.5, -0.5, 0.2);
+				var addYN = new Vec3(0.5, 0.5, 0.2);	// Haut Gauche
+				var addYP = new Vec3(-0.5, 0.5, 0.2); 	// Haut Droite
+
+				return [Vec3.sum(v[4],addXN), Vec3.sum(v[5], addXP), Vec3.sum(v[7], addYN), Vec3.sum(v[6], addYP)];
+			}
+			else {
+				var addXN = new Vec3(-0.5, -0.5, -0.2);	// Bas Droite
+				var addXP = new Vec3(0.5, 0.5, -0.2);	// Haut gauche
+				var addYN = new Vec3(-0.5, 0.5, -0.2);	// Haut droite
+				var addYP = new Vec3(0.5, -0.5, -0.2);	// BAS gauche
+
+				return [Vec3.sum(v[0],addXN), Vec3.sum(v[2], addYN), Vec3.sum(v[3], addXP), Vec3.sum(v[1], addYP)];
+			}
+		}
+	},
+
 	// Enlarges the box enough to contain the given point
 	boundPoint : function( vec3 ) {
 		if ( this.isEmpty ) {
@@ -1068,7 +1130,8 @@ var canvas_context = canvas.getContext("2d");
 var raycast_indexOfIntersectedBox = -1; // -1 means no intersection
 var raycast_intersectionPoint = new Vec3();
 var raycast_normalAtIntersection = new Vec3();
-
+var raycast_box;
+var showRect = false;
 
 
 var camera = new Cam3();
@@ -1078,6 +1141,7 @@ var color_fill = new Color(0,1,0);
 var color_wireframe = new Color(0.5,0.5,0);
 var color_cameraTarget = new Color(0,0.5,0.5);
 var color_highlight = new Color(1,0,0);
+var color_square = new Color(0,0,0, 0.2);
 
 var worldSpaceOrigin = new Vec3(0,0,0);
 var worldSpaceXAxisTip = new Vec3(1,0,0);
@@ -1120,6 +1184,12 @@ var redraw = function() {
 	
 	if ( raycast_indexOfIntersectedBox >= 0 ) {
 		pushLineSegmentToRender( raycast_intersectionPoint, Vec3.sum(raycast_intersectionPoint,raycast_normalAtIntersection), color_highlight );
+
+		if (showRect) {
+			var corners = raycast_box.cornersOfFace(raycast_normalAtIntersection);
+
+			pushPolygonToRender([corners[0], corners[1], corners[2], corners[3]], true, color_square, true, color_square);
+		}
 	}
 
 	renderPolygons(camera, canvas, canvas_context);
@@ -1145,6 +1215,22 @@ function mouseDownHandler(e) {
 	var canvas_rectangle = canvas.getBoundingClientRect();
 	var mouse_x = e.clientX - canvas_rectangle.left;
 	var mouse_y = e.clientY - canvas_rectangle.top;
+
+	showRect = true;
+
+	// perform raycast to find the intersected box
+	var ray = camera.computeRay(mouse_x,mouse_y);
+	var result = findIntersectedBox(ray);
+	
+	if ( result === null ) {
+		raycast_indexOfIntersectedBox = -1;
+	}
+	else {
+		raycast_box = new Box3(boxes[result.index].min, boxes[result.index].max);
+		console.log(raycast_box);
+	}
+
+	redraw();
 	old_mouse_x = mouse_x;
 	old_mouse_y = mouse_y;
 	//console.log("mouse down");
@@ -1156,6 +1242,7 @@ function mouseUpHandler(e) {
 	//var mouse_x = e.clientX - canvas_rectangle.left;
 	//var mouse_y = e.clientY - canvas_rectangle.top;
 	//console.log("mouse up");
+	showRect = false;
 }
 
 function mouseMoveHandler(e) {
@@ -1285,6 +1372,8 @@ function mouseMoveHandler(e) {
 			raycast_intersectionPoint.copy( result.intersection );
 			raycast_normalAtIntersection.copy( result.normalAtIntersection );
 		}
+
+		showRect = false;
 	}
 	redraw();
 	old_mouse_x = mouse_x;
