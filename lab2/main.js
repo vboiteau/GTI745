@@ -1281,40 +1281,42 @@ function mouseMoveHandler(e) {
 
 				var diff = Vec3.diff(ray2.origin, ray1.origin);
 
-
-
 				if( norm.x != 0)
 				{
-					console.log("X")
+					//console.log("X")
 
 					if ( norm.x === 1 ){
-						console.log("Forward");
-
-						box.max.x += diff.x*MULTIPLIER;
+						//console.log("Forward");
+						if(box.max.x + (diff.x*MULTIPLIER) > box.min.x){
+							box.max.x += diff.x*MULTIPLIER;
+						}
 
 					}
 					else{
-						console.log("Backward");
-
-						box.min.x += diff.x*MULTIPLIER;
+						//console.log("Backward");
+						if(box.min.x + (diff.x*MULTIPLIER) < box.max.x){
+							box.min.x += diff.x*MULTIPLIER;
+						}
 					}
 
 				}
 				else if( norm.y != 0 ){
 
-					console.log("Y")
+					//console.log("Y")
 
 					if ( norm.y === 1 ){
 
-						console.log("Forward");
-
-						box.max.y += diff.y*MULTIPLIER;
+						//console.log("Forward");
+						if(box.max.y + (diff.y*MULTIPLIER) > box.min.y){
+							box.max.y += diff.y*MULTIPLIER;
+						}
 					}
 					else{
 
-						console.log("Backward");
-
-						box.min.y += diff.y*MULTIPLIER;
+						//console.log("Backward");
+						if(box.min.y + (diff.y*MULTIPLIER) < box.max.y){
+							box.min.y += diff.y*MULTIPLIER;
+						}
 					}
 
 				}
@@ -1323,15 +1325,17 @@ function mouseMoveHandler(e) {
 					console.log("Z");
 
 					if ( norm.z === 1 ){
-						console.log("Forward");
-
-						box.max.z += diff.z*MULTIPLIER;
+						//console.log("Forward");
+						if(box.max.z + (diff.z*MULTIPLIER) > box.min.z){
+							box.max.z += diff.z*MULTIPLIER;
+						}
 
 					}
 					else{
 						console.log("Backward");
-
-						box.min.z += diff.z*MULTIPLIER;
+						if(box.min.z + (diff.z*MULTIPLIER) < box.max.z){
+							box.min.z += diff.z*MULTIPLIER;
+						}
 					}
 
 				}
