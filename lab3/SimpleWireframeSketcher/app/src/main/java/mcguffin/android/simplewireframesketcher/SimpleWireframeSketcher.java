@@ -2,6 +2,8 @@
 package mcguffin.android.simplewireframesketcher;
 
 
+import android.util.Log;
+
 import java.util.ArrayList;
 
 
@@ -16,6 +18,8 @@ class Stroke {
 	private float color_red = 0;
 	private float color_green = 0;
 	private float color_blue = 0;
+	private float alpha = 1;
+	private float stroke = 1;
 
 	public void addPoint( Point3D p ) {
 		points.add( p );
@@ -37,6 +41,17 @@ class Stroke {
 		color_red = r;
 		color_green = g;
 		color_blue = b;
+	}
+
+	public void setColor(float r, float g, float b, float a){
+		color_red = r;
+		color_green = g;
+		color_blue = b;
+		alpha = a;
+	}
+
+	public void setStroke(float s){
+		stroke = s*10;
 	}
 
 	public ArrayList< Point2D > getExpandedConvexHull( Camera3D cam ) {
@@ -63,9 +78,9 @@ class Stroke {
 	}
 
 	public void draw( GraphicsWrapper gw, Camera3D cam ) {
-		gw.setColor( color_red, color_green, color_blue );
+		gw.setColor( color_red, color_green, color_blue, 1 );
 		ArrayList< Point2D > points2D = getPoints2D( cam );
-		gw.drawPolyline( points2D );
+		gw.drawPolyline( points2D , stroke);
 	}
 }
 
@@ -101,6 +116,8 @@ class DrawingCanvas implements MultitouchReceiver {
 	public ArrayList< Stroke > selectedStrokes = new ArrayList< Stroke >();
 
 	float currentColor_r = 0, currentColor_g = 0, currentColor_b = 0;
+
+	float pressure = 1;
 
 	// This cursor is provided by the client; we only temporarily store a reference to it.
 	MultitouchCursor inputCursor = null;
@@ -154,6 +171,9 @@ class DrawingCanvas implements MultitouchReceiver {
 	public void processEvent( MultitouchDispatcher dispatcher, MultitouchCursor cursor, int geometryEvent ) {
 		parentDispatcher = dispatcher;
 		if ( cursor.supportsMultipleInstances() ) { // fingers
+
+			Log.v("TOUCH", "Fingers");
+
 			if ( cursor.distanceState == MultitouchCursor.DS_TOUCHING && cursor.didPositionChange() ) {
 				MultitouchCursor otherCursor = dispatcher.getOtherCursorOfReceiver( this, cursor );
 				if ( otherCursor!=null && otherCursor.distanceState != MultitouchCursor.DS_TOUCHING ) {
@@ -170,6 +190,8 @@ class DrawingCanvas implements MultitouchReceiver {
 			}
 		}
 		else { // stylus or mouse
+
+
 			switch ( stylusMode ) {
 			case STYLUS_MODE_INKING :
 			case STYLUS_MODE_INKING_SYMMETRICAL :
@@ -183,6 +205,9 @@ class DrawingCanvas implements MultitouchReceiver {
 				case MultitouchCursor.EVENT_WHILE_TOUCHING :
 					// nothing to do but redraw
 					MultitouchFramework.Assert( inputCursor == cursor, "f351ad54" );
+
+					pressure = inputCursor.old_pressure;
+
 					break;
 				case MultitouchCursor.EVENT_TOUCHING_TO_OUT_OF_RANGE :
 				case MultitouchCursor.EVENT_TOUCHING_TO_HOVERING :
@@ -198,10 +223,15 @@ class DrawingCanvas implements MultitouchReceiver {
 					normalToWorkingPlane = normalToWorkingPlane.normalized();
 					Plane plane = new Plane( normalToWorkingPlane, workingOrigin );
 
+					//Log.v("PRESSURE", Float.toString(inputCursor.old_pressure));
+
 					Stroke newStroke = new Stroke();
+					newStroke.setStroke(pressure);
 					Stroke newStroke2 = null; // mirror image
 					if ( stylusMode == STYLUS_MODE_INKING_SYMMETRICAL )
 						newStroke2 = new Stroke();
+
+					//Draws the points according to the history of points
 					for ( Point2D p : inputCursor.getHistoryOfPositions() ) {
 						Ray3D ray = camera.computeRay( p.x(), p.y() );
 						Point3D intersection = new Point3D();
@@ -211,10 +241,11 @@ class DrawingCanvas implements MultitouchReceiver {
 								newStroke2.addPoint( new Point3D( - intersection.x(), intersection.y(), intersection.z() ) );
 						}
 					}
-					newStroke.setColor( currentColor_r, currentColor_g, currentColor_b );
+					newStroke.setColor( currentColor_r, currentColor_g, currentColor_b);
 					drawing.addStroke( newStroke );
 					if ( stylusMode == STYLUS_MODE_INKING_SYMMETRICAL ) {
-						newStroke2.setColor( currentColor_r, currentColor_g, currentColor_b );
+						newStroke2.setColor( currentColor_r, currentColor_g, currentColor_b);
+						newStroke2 .setStroke(pressure);
 						drawing.addStroke( newStroke2 );
 					}
 
