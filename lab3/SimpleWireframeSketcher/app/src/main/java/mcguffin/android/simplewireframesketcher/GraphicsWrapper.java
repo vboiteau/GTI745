@@ -10,6 +10,7 @@ import android.graphics.Path;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import java.lang.Math;
 import java.util.ArrayList;
@@ -276,6 +277,7 @@ class GraphicsWrapper {
 		}
 		if ( isClosed )
 			path.close();
+
 		paint.setStyle( isFilled ? Paint.Style.FILL : Paint.Style.STROKE );
 		// TODO-3 or should i call path.setFillType() ?
 		canvas.drawPath( path, paint );
@@ -304,6 +306,7 @@ class GraphicsWrapper {
 	public void drawPolyline( ArrayList< Point2D > points ) {
 		drawPolyline( points, false, false );
 	}
+	public void drawPolyline(ArrayList< Point2D > points, float stroke ){ paint.setStrokeWidth(stroke); drawPolyline(points, false, false);}
 	public void drawPolygon( ArrayList< Point2D > points ) {
 		drawPolyline( points, true, false );
 	}
