@@ -16,6 +16,7 @@ import android.graphics.Canvas;
 //import android.graphics.Path;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 import android.app.Activity;
@@ -36,6 +37,7 @@ public class MultitouchFramework extends View {
 	Activity activity = null;
 
 	Paint paint = new Paint();
+
 
 	GraphicsWrapper gw = new GraphicsWrapper();
 	Camera3D camera = new Camera3D();

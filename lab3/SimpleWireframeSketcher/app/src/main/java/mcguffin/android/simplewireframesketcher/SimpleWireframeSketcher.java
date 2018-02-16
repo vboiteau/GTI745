@@ -2,7 +2,9 @@
 package mcguffin.android.simplewireframesketcher;
 
 
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 
 import java.util.ArrayList;
 
@@ -51,7 +53,7 @@ class Stroke {
 	}
 
 	public void setStroke(float s){
-		stroke = s*10;
+		stroke = s*15;
 	}
 
 	public ArrayList< Point2D > getExpandedConvexHull( Camera3D cam ) {
@@ -108,6 +110,7 @@ class Drawing {
 
 
 class DrawingCanvas implements MultitouchReceiver {
+
 	GraphicsWrapper gw = null;
 	Camera3D camera = null;
 	public Drawing drawing = null;
@@ -172,8 +175,6 @@ class DrawingCanvas implements MultitouchReceiver {
 		parentDispatcher = dispatcher;
 		if ( cursor.supportsMultipleInstances() ) { // fingers
 
-			Log.v("TOUCH", "Fingers");
-
 			if ( cursor.distanceState == MultitouchCursor.DS_TOUCHING && cursor.didPositionChange() ) {
 				MultitouchCursor otherCursor = dispatcher.getOtherCursorOfReceiver( this, cursor );
 				if ( otherCursor!=null && otherCursor.distanceState != MultitouchCursor.DS_TOUCHING ) {
@@ -190,7 +191,6 @@ class DrawingCanvas implements MultitouchReceiver {
 			}
 		}
 		else { // stylus or mouse
-
 
 			switch ( stylusMode ) {
 			case STYLUS_MODE_INKING :
@@ -223,8 +223,6 @@ class DrawingCanvas implements MultitouchReceiver {
 					normalToWorkingPlane = normalToWorkingPlane.normalized();
 					Plane plane = new Plane( normalToWorkingPlane, workingOrigin );
 
-					//Log.v("PRESSURE", Float.toString(inputCursor.old_pressure));
-
 					Stroke newStroke = new Stroke();
 					newStroke.setStroke(pressure);
 					Stroke newStroke2 = null; // mirror image
@@ -241,12 +239,19 @@ class DrawingCanvas implements MultitouchReceiver {
 								newStroke2.addPoint( new Point3D( - intersection.x(), intersection.y(), intersection.z() ) );
 						}
 					}
+
+
+
 					newStroke.setColor( currentColor_r, currentColor_g, currentColor_b);
 					drawing.addStroke( newStroke );
 					if ( stylusMode == STYLUS_MODE_INKING_SYMMETRICAL ) {
 						newStroke2.setColor( currentColor_r, currentColor_g, currentColor_b);
 						newStroke2 .setStroke(pressure);
 						drawing.addStroke( newStroke2 );
+
+						//Setup Inverted array of pixels
+						inputCursor.setInverseHistoryOfPositions(newStroke2.getPoints2D(camera));
+
 					}
 
 					inputCursor = null;
@@ -397,8 +402,6 @@ class DrawingCanvas implements MultitouchReceiver {
 		cornersOfWorkingPlane.add( Point3D.sum(workingOrigin,Vector3D.diff(v2,v1)) );
 		drawPolyline3D( cornersOfWorkingPlane, true );
 
-
-
 		drawing.draw( gw, camera );
 
 		gw.setColor(1.0f,0.5f,0,0.2f); // transparent orange
@@ -423,11 +426,41 @@ class DrawingCanvas implements MultitouchReceiver {
 
 		}
 
-		// drawing ink trails
+		// drawing ink trails (PREVIEW)
 		if ( inputCursor != null && inputCursor.distanceState==MultitouchCursor.DS_TOUCHING ) {
+
 			if ( stylusMode == STYLUS_MODE_INKING || stylusMode == STYLUS_MODE_INKING_SYMMETRICAL ) {
-				gw.setColor(0,0,0);
-				gw.drawPolyline( inputCursor.getHistoryOfPositions() );
+
+				gw.setColor(0, 0, 0);
+				gw.drawPolyline( inputCursor.getHistoryOfPositions());
+
+				if ( stylusMode == STYLUS_MODE_INKING_SYMMETRICAL ) {
+
+					//We create a stroke with 3D positions and we convert it to 2D so we get 3D effect for preview
+					Vector3D normalToWorkingPlane = new Vector3D(0,0,0);
+					normalToWorkingPlane.v[dimension] = backwardVector.v[dimension];
+					normalToWorkingPlane = normalToWorkingPlane.normalized();
+					Plane plane = new Plane( normalToWorkingPlane, workingOrigin );
+
+					//Temproary stroke
+					Stroke tmpStroke = new Stroke();
+
+					//We create 3D points for every 2D points in the history and get the symmetric points
+					for ( Point2D p : inputCursor.getHistoryOfPositions() ) {
+						Ray3D ray = camera.computeRay( p.x(), p.y() );
+						Point3D intersection = new Point3D();
+						if ( plane.intersects( ray, intersection, true ) ) {
+
+							if ( stylusMode == STYLUS_MODE_INKING_SYMMETRICAL )
+								tmpStroke.addPoint( new Point3D( - intersection.x(), intersection.y(), intersection.z() ) );
+						}
+					}
+
+					//Converted to 2D
+					gw.drawPolyline(tmpStroke.getPoints2D(camera));
+
+				}
+
 			}
 			else if ( stylusMode == STYLUS_MODE_LASSO ) {
 
@@ -453,7 +486,6 @@ class DrawingCanvas implements MultitouchReceiver {
 	}
 
 	public void undo(){
-		Log.v("UNDO", "Undo button was pressed.");
 
 		//If there is atleast one stroke
 		if( drawing.strokes.size() > 0) {
