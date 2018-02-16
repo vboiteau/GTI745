@@ -205,7 +205,13 @@ class DrawingCanvas implements MultitouchReceiver {
 					// nothing to do but redraw
 					MultitouchFramework.Assert( inputCursor == cursor, "f351ad54" );
 
-					pressure = inputCursor.old_pressure;
+					if(cursor.isStylusOrEraser()) {
+						pressure = inputCursor.old_pressure;
+					}
+					else{
+						pressure = 0.5f;
+					}
+
 
 					break;
 				case MultitouchCursor.EVENT_TOUCHING_TO_OUT_OF_RANGE :
