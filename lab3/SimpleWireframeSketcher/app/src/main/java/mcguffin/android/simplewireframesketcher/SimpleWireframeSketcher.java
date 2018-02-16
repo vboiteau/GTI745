@@ -451,6 +451,17 @@ class DrawingCanvas implements MultitouchReceiver {
 
 
 	}
+
+	public void undo(){
+		Log.v("UNDO", "Undo button was pressed.");
+
+		//If there is atleast one stroke
+		if( drawing.strokes.size() > 0) {
+
+			drawing.strokes.remove(drawing.strokes.size() - 1);
+
+		}
+	}
 }
 
 
@@ -524,11 +535,6 @@ class ToolbarButton implements MultitouchReceiver {
 	public boolean isInside( int x, int y ) {
 		return isOverButton(x,y) || isOverConfirmationBox(x,y);
 	}
-
-
-
-
-
 
 	public void processEvent( MultitouchDispatcher dispatcher, MultitouchCursor cursor, int geometryEvent ) {
 
@@ -606,7 +612,8 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 	private static final int BM_BLUE_INK = 9;    // radio button group C
 	private static final int BM_PURPLE_INK = 10; // radio button group C
 	private static final int BM_GREY_INK = 11;   // radio button group C
-	private static final int NUM_BITMAPS = 12;
+	private static final int BM_UNDO = 12;
+	private static final int NUM_BITMAPS = 13;
 
 	// These indices will be used to index into an array,
 	// and thus should start at zero.
@@ -622,7 +629,8 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 	private static final int TB_BLUE_INK = 8;   // radio button group C
 	private static final int TB_PURPLE_INK = 9; // radio button group C
 	private static final int TB_GREY_INK = 10;  // radio button group C
-	private static final int NUM_TOOLBAR_BUTTONS = 11;
+	private static final int TB_UNDO = 11;
+	private static final int NUM_TOOLBAR_BUTTONS = 12;
 
 	public MultitouchFramework mf = null;
 	DrawingCanvas drawingCanvas = null;
@@ -650,6 +658,7 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		mf.loadBitmap( BM_BLUE_INK,                       R.drawable.color_0080ff );
 		mf.loadBitmap( BM_PURPLE_INK,                     R.drawable.color_ff00ff );
 		mf.loadBitmap( BM_GREY_INK,                       R.drawable.color_808080 );
+		mf.loadBitmap( BM_UNDO,               R.drawable.undo );
 
 		buttons = new ToolbarButton[ NUM_TOOLBAR_BUTTONS ];
 		int index = 0;
@@ -683,7 +692,15 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		buttons[index++] = new ToolbarButton(mf,this,x0,0,iconSize,iconSize,"Grey Ink",
 			BM_GREY_INK,-1,-1); x0 += iconSize;
 
+		x0 += iconSize;
+
+		//UNDO
+		buttons[index++] = new ToolbarButton(mf,this,x0,0,iconSize,iconSize,"Undo",
+				BM_UNDO,-1,-1); x0 += iconSize;
+
+
 		MultitouchFramework.Assert( index == NUM_TOOLBAR_BUTTONS, "e4ef8900" );
+
 		for ( int i = 0; i < NUM_TOOLBAR_BUTTONS; ++i ) {
 			dispatcherImplementation.addReceiver( buttons[i] );
 		}
@@ -772,7 +789,9 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 			// drawingCanvas.delete(true); TODO
 			drawingCanvas.delete(false);
 		}
-
+		else if (button == buttons[TB_UNDO]){
+			drawingCanvas.undo();
+		}
 		else if ( button == buttons[ TB_RECTANGLE_LASSO_SELECTION_TOOL ] ) {
 			setStylusMode( TB_RECTANGLE_LASSO_SELECTION_TOOL );
 		}
@@ -782,7 +801,6 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		else if ( button == buttons[ TB_INKING_SYMMETRICAL_TOOL ] ) {
 			setStylusMode( TB_INKING_SYMMETRICAL_TOOL );
 		}
-
 		else if ( button == buttons[ TB_BLACK_INK ] ) {
 			setInkColor( TB_BLACK_INK );
 			if ( stylusMode_toolbarButton!=TB_INKING_TOOL && stylusMode_toolbarButton!=TB_INKING_SYMMETRICAL_TOOL )
