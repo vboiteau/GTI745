@@ -185,12 +185,11 @@ class DrawingCanvas implements MultitouchReceiver {
 				if ( otherCursor != null ) {
 					updateCameraBimanually( cursor, otherCursor );
 				}
-				else {
-					updateCameraUnimanually( cursor );
-				}
 			}
 		}
-		else { // stylus or mouse
+
+		if (cursor.isStylusOrEraser() || cursor.supportsMultipleInstances()) { // stylus or mouse
+
 
 			switch ( stylusMode ) {
 			case STYLUS_MODE_INKING :
