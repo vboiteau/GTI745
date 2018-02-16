@@ -93,6 +93,8 @@ public class MultitouchCursor {
 
 
 	private ArrayList< Point2D > historyOfPositions = new ArrayList< Point2D >(); // history of pixel coordinates; only recorded if the client asks for this
+	private ArrayList< Point2D > inverseHistoryOfPositions = new ArrayList<>();
+
 	public float totalDistanceAlongHistory = 0;
 	public float straightLineDistanceFromStartOfHistory = 0;
 	boolean mustSaveHistory = false;
@@ -106,6 +108,16 @@ public class MultitouchCursor {
 			historyOfPositions.add( new Point2D( x, y ) );
 		}
 	}
+
+	public void setInverseHistoryOfPositions(ArrayList<Point2D> points ){
+
+		inverseHistoryOfPositions = points;
+	}
+
+	public ArrayList<Point2D> getInverseHistoryOfPositions(){
+		return inverseHistoryOfPositions;
+	}
+
 	public ArrayList< Point2D > getHistoryOfPositions() { return historyOfPositions; }
 	public Point2D getCurrentPosition() { return new Point2D(x,y); }
 	public Point2D getPreviousPosition() {
