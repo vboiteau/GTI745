@@ -130,6 +130,7 @@ class DrawingCanvas implements MultitouchReceiver {
 	public static final int STYLUS_MODE_LASSO = 2;
 	private int stylusMode = STYLUS_MODE_INKING;
 	public int buttonPressed = -1;
+	public boolean cameraModeEnabled = true;
 
 	public DrawingCanvas( Drawing d, GraphicsWrapper gw ) {
 		drawing = d;
@@ -176,7 +177,7 @@ class DrawingCanvas implements MultitouchReceiver {
 		parentDispatcher = dispatcher;
 
 		//Camera movement
-		if ( cursor.supportsMultipleInstances() && buttonPressed < 0) { // fingers
+		if ( cursor.supportsMultipleInstances() && cameraModeEnabled) { // fingers
 
 			if ( cursor.distanceState == MultitouchCursor.DS_TOUCHING && cursor.didPositionChange() ) {
 				MultitouchCursor otherCursor = dispatcher.getOtherCursorOfReceiver( this, cursor );
@@ -188,11 +189,14 @@ class DrawingCanvas implements MultitouchReceiver {
 				if ( otherCursor != null ) {
 					updateCameraBimanually( cursor, otherCursor );
 				}
+				else{
+					updateCameraUnimanually( cursor );
+				}
 			}
 		}
 
 		//Actions on the canvas
-		else if (cursor.isStylusOrEraser() || buttonPressed >= 0) { // stylus or mouse
+		else if (cursor.isStylusOrEraser() || (cursor.supportsMultipleInstances() && !cameraModeEnabled)) { // stylus or mouse
 
 
 			switch ( stylusMode ) {
@@ -585,7 +589,7 @@ class ToolbarButton implements MultitouchReceiver {
 		case MultitouchCursor.EVENT_TOUCHING_TO_OUT_OF_RANGE :
 		case MultitouchCursor.EVENT_TOUCHING_TO_HOVERING :
 			//Removing this line makes the App always in finger mode without movement of camera
-			//toolbar.buttonPressed = -1;
+			this.toolbar.setButtonPressed(-1);
 			if ( isOverButton( cursor.x, cursor.y ) ) {
 				if ( hasConfirmationBox() ) {
 					isConfirmationBoxOpen = true;
@@ -660,7 +664,8 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 	private static final int BM_PURPLE_INK = 10; // radio button group C
 	private static final int BM_GREY_INK = 11;   // radio button group C
 	private static final int BM_UNDO = 12;
-	private static final int NUM_BITMAPS = 13;
+	private static final int BM_CAMERA = 13;
+	private static final int NUM_BITMAPS = 14;
 
 	// These indices will be used to index into an array,
 	// and thus should start at zero.
@@ -677,7 +682,8 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 	private static final int TB_PURPLE_INK = 9; // radio button group C
 	private static final int TB_GREY_INK = 10;  // radio button group C
 	private static final int TB_UNDO = 11;
-	private static final int NUM_TOOLBAR_BUTTONS = 12;
+	private static final int TB_CAMERA = 12;
+	private static final int NUM_TOOLBAR_BUTTONS = 13;
 
 	public MultitouchFramework mf = null;
 	DrawingCanvas drawingCanvas = null;
@@ -687,6 +693,8 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 
 	private int stylusMode_toolbarButton = TB_INKING_TOOL;
 	private int colorMode_toolbarButton = TB_BLACK_INK;
+	private boolean cameraModeEnabled = true;
+
 
 
 	public Toolbar( MultitouchFramework mf, DrawingCanvas dc ) {
@@ -706,7 +714,9 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		mf.loadBitmap( BM_BLUE_INK,                       R.drawable.color_0080ff );
 		mf.loadBitmap( BM_PURPLE_INK,                     R.drawable.color_ff00ff );
 		mf.loadBitmap( BM_GREY_INK,                       R.drawable.color_808080 );
-		mf.loadBitmap( BM_UNDO,               R.drawable.undo );
+		mf.loadBitmap( BM_UNDO,               			  R.drawable.undo );
+		mf.loadBitmap( BM_CAMERA,               			  R.drawable.camera );
+
 
 		buttons = new ToolbarButton[ NUM_TOOLBAR_BUTTONS ];
 		int index = 0;
@@ -745,6 +755,9 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		//UNDO
 		buttons[index++] = new ToolbarButton(mf,this,x0,0,iconSize,iconSize,"Undo",
 				BM_UNDO,-1,-1); x0 += iconSize;
+
+		buttons[index++] = new ToolbarButton(mf,this,x0,0,iconSize,iconSize,"Camera",
+				BM_CAMERA,-1,-1); x0 += iconSize;
 
 
 		MultitouchFramework.Assert( index == NUM_TOOLBAR_BUTTONS, "e4ef8900" );
@@ -842,6 +855,11 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		else if (button == buttons[TB_UNDO]){
 			drawingCanvas.undo();
 		}
+		else if (button == buttons[TB_CAMERA]){
+			//Enable / Disable camera according to current state of button
+			cameraModeEnabled = !cameraModeEnabled;
+			this.drawingCanvas.cameraModeEnabled = cameraModeEnabled;
+		}
 		else if ( button == buttons[ TB_RECTANGLE_LASSO_SELECTION_TOOL ] ) {
 			setStylusMode( TB_RECTANGLE_LASSO_SELECTION_TOOL );
 		}
@@ -904,6 +922,12 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		gw.setColor(1,0,0);
 		drawHighlightingForButton( gw, stylusMode_toolbarButton );
 		drawHighlightingForButton( gw, colorMode_toolbarButton );
+
+		if(cameraModeEnabled){
+			drawHighlightingForButton(gw, TB_CAMERA);
+		}
+
+
 	}
 }
 
