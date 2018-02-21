@@ -129,6 +129,7 @@ class DrawingCanvas implements MultitouchReceiver {
 	public static final int STYLUS_MODE_INKING_SYMMETRICAL = 1;
 	public static final int STYLUS_MODE_LASSO = 2;
 	private int stylusMode = STYLUS_MODE_INKING;
+	public int buttonPressed = -1;
 
 	public DrawingCanvas( Drawing d, GraphicsWrapper gw ) {
 		drawing = d;
@@ -173,7 +174,9 @@ class DrawingCanvas implements MultitouchReceiver {
 	}
 	public void processEvent( MultitouchDispatcher dispatcher, MultitouchCursor cursor, int geometryEvent ) {
 		parentDispatcher = dispatcher;
-		if ( cursor.supportsMultipleInstances() ) { // fingers
+
+		//Camera movement
+		if ( cursor.supportsMultipleInstances() && buttonPressed < 0) { // fingers
 
 			if ( cursor.distanceState == MultitouchCursor.DS_TOUCHING && cursor.didPositionChange() ) {
 				MultitouchCursor otherCursor = dispatcher.getOtherCursorOfReceiver( this, cursor );
@@ -188,7 +191,8 @@ class DrawingCanvas implements MultitouchReceiver {
 			}
 		}
 
-		if (cursor.isStylusOrEraser() || cursor.supportsMultipleInstances()) { // stylus or mouse
+		//Actions on the canvas
+		else if (cursor.isStylusOrEraser() || buttonPressed >= 0) { // stylus or mouse
 
 
 			switch ( stylusMode ) {
@@ -580,6 +584,8 @@ class ToolbarButton implements MultitouchReceiver {
 		switch ( cursor.getDistanceStateEventType() ) {
 		case MultitouchCursor.EVENT_TOUCHING_TO_OUT_OF_RANGE :
 		case MultitouchCursor.EVENT_TOUCHING_TO_HOVERING :
+			//Removing this line makes the App always in finger mode without movement of camera
+			//toolbar.buttonPressed = -1;
 			if ( isOverButton( cursor.x, cursor.y ) ) {
 				if ( hasConfirmationBox() ) {
 					isConfirmationBoxOpen = true;
@@ -595,7 +601,11 @@ class ToolbarButton implements MultitouchReceiver {
 				isConfirmationBoxOpen = false;
 			}
 			break;
+			case MultitouchCursor.DS_TOUCHING :
+				this.toolbar.setButtonPressed(iconIndex);
+				break;
 		}
+
 	}
 
 	public void draw( GraphicsWrapper gw ) {
@@ -678,6 +688,7 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 	private int stylusMode_toolbarButton = TB_INKING_TOOL;
 	private int colorMode_toolbarButton = TB_BLACK_INK;
 
+
 	public Toolbar( MultitouchFramework mf, DrawingCanvas dc ) {
 		this.mf = mf;
 		this.drawingCanvas = dc;
@@ -743,7 +754,9 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		}
 	}
 
-
+	public void setButtonPressed(int id){
+		this.drawingCanvas.buttonPressed = id;
+	}
 
 	private void setStylusMode( int toolbarButton ) {
 		stylusMode_toolbarButton = toolbarButton;
