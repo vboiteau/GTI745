@@ -354,41 +354,23 @@ class DrawingCanvas implements MultitouchReceiver {
                                 }
                             }
 
-                            ArrayList<Stroke> strokesToRemove = new ArrayList<Stroke>();
-                            double padding = 1.0;
+                            ArrayList<Stroke> strokesToRemove = new ArrayList<>();
+                            ArrayList<Point3D> newP3D = newStroke.getPoints3D();
 
-                            for (Point3D p : newStroke.getPoints3D()) {
-                                // complete a rectangle selection
-                            /*AlignedRectangle2D selectedRectangle = new AlignedRectangle2D(
-                                    cursor.getFirstPosition(), cursor.getCurrentPosition()
-                            );*/
+                            for (int j = 1; j < newP3D.size(); j++) {
+                                Point3D newP0 = newP3D.get(j - 1);
+                                Point3D newP1 = newP3D.get(j);
+
                                 for ( int i = 0; i < drawing.strokes.size(); i++ ) {
                                     Stroke s = drawing.strokes.get(i);
-                                    ArrayList< Point3D > points3D = s.getPoints3D( );
+                                    ArrayList<Point3D> points3D = s.getPoints3D();
 
-                                    Log.v(" ========== STROKE NO. ", Integer.toString(i));
+                                    for ( int ij = 1; ij < points3D.size(); ++ij ) {
+                                        Point3D oldP2 = points3D.get(ij - 1);
+                                        Point3D oldP3 = points3D.get(ij);
 
-                                    for ( int j = 0; j < points3D.size(); ++j ) {
-                                        Point3D oldP = points3D.get(j);
-                                        Vector3D diffV = Point3D.diff(p, oldP);
-
-                                        if (Float.compare(p.x(), oldP.x()) == 0)
-                                            Log.v("INTERSECTION x", "X EQUALS");
-                                        if (Float.compare(p.y(), oldP.y()) == 0)
-                                            Log.v("INTERSECTION x", "Y EQUALS");
-                                        if (Float.compare(p.z(), oldP.z()) == 0)
-                                            Log.v("INTERSECTION x", "Z EQUALS");
-
-                                        //Log.v("INTERSECTION x", Float.toString(diffV.x()));
-                                        //Log.v("INTERSECTION y", Float.toString(diffV.y()));
-                                        //Log.v("INTERSECTION z", Float.toString(diffV.z()));
-
-                                        if ( (diffV.x() > -padding || diffV.x() < padding) &&
-                                                (diffV.y() > -padding || diffV.y() < padding) &&
-                                                (diffV.z() > -padding || diffV.z() < padding)) {
-                                            //Log.v("INTERSECTED", ));
+                                        if (Vector3D.detectedAnIntersection3D(newP0, newP1, oldP2, oldP3)) {
                                             strokesToRemove.add(s);
-                                            Log.v("INTERSECTED", "A STROKE HAS BEEN INTERSECTED.");
                                         }
                                     }
                                 }
