@@ -125,6 +125,11 @@ public class Vector3D {
 		);
 	}
 
+    // return the normal of the given vector
+    static public float norm2( Vector3D v ) {
+	    return v.x() * v.x() + v.y() * v.y() + v.z() * v.z();
+    }
+
 	// returns the sum of the given vectors
 	static public Vector3D sum( Vector3D a, Vector3D b ) {
 		return new Vector3D( a.x()+b.x(), a.y()+b.y(), a.z()+b.z() );
@@ -159,4 +164,38 @@ public class Vector3D {
 		return angle;
 	}
 
+    static public boolean detectedAnIntersection2D(Point2D p0, Point2D p1, Point2D p2, Point2D p3) {
+        float seg1x = p1.x() - p0.x();
+        float seg1y = p1.y() - p0.y();
+        float seg2x = p3.x() - p2.x();
+        float seg2y = p3.y() - p2.y();
+
+        float s = (-seg1y * (p0.x() - p2.x()) + seg1x * (p0.y() - p2.y())) / (-seg2x * seg1y + seg1x * seg2y);
+        float t = ( seg2x * (p0.y() - p2.y()) - seg2y * (p0.x() - p2.x())) / (-seg2x * seg1y + seg1x * seg2y);
+
+        // We have an intersection
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
+        {
+            return true;
+        }
+
+        return false; // No intersection detected,
+    }
+
+    static public boolean detectedAnIntersection3D(Point3D p0, Point3D p1, Point3D p2, Point3D p3) {
+        Vector3D vec1 = Point3D.diff(p1, p0);
+        Vector3D vec2 = Point3D.diff(p3, p2);
+        Vector3D vec3 = Point3D.diff(p2, p0);
+
+        float s = dot(cross(vec3, vec2), cross(vec1, vec2)) / norm2(cross(vec1, vec2));
+        float t = dot(cross(vec3, vec1), cross(vec1, vec2)) / norm2(cross(vec1, vec2));
+
+        // We have an intersection
+        if ((s >= 0 && s <= 1) && (t >= 0 && t <= 1))
+        {
+            return true;
+        }
+
+        return false; // No intersection detected,
+    }
 }
