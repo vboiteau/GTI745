@@ -128,7 +128,10 @@ class DrawingCanvas implements MultitouchReceiver {
 	public static final int STYLUS_MODE_INKING = 0;
 	public static final int STYLUS_MODE_INKING_SYMMETRICAL = 1;
 	public static final int STYLUS_MODE_LASSO = 2;
+    public static final int ERASE_MODE = 3;
 	private int stylusMode = STYLUS_MODE_INKING;
+	public int buttonPressed = -1;
+	public boolean cameraModeEnabled = true;
 
 	public DrawingCanvas( Drawing d, GraphicsWrapper gw ) {
 		drawing = d;
@@ -168,12 +171,16 @@ class DrawingCanvas implements MultitouchReceiver {
 	public int maxNumAcceptedCursors() { return 2; }
 	public boolean isDeviceAcceptable( int deviceType ) { return true; }
 	public boolean draggingCursorsCannotExit() { return true; }
+
 	public boolean isInside( int x, int y ) {
 		return y >= Toolbar.iconSize;
 	}
+
 	public void processEvent( MultitouchDispatcher dispatcher, MultitouchCursor cursor, int geometryEvent ) {
 		parentDispatcher = dispatcher;
-		if ( cursor.supportsMultipleInstances() ) { // fingers
+
+		//Camera movement
+		if ( cursor.supportsMultipleInstances() && cameraModeEnabled) { // fingers
 
 			if ( cursor.distanceState == MultitouchCursor.DS_TOUCHING && cursor.didPositionChange() ) {
 				MultitouchCursor otherCursor = dispatcher.getOtherCursorOfReceiver( this, cursor );
@@ -185,10 +192,14 @@ class DrawingCanvas implements MultitouchReceiver {
 				if ( otherCursor != null ) {
 					updateCameraBimanually( cursor, otherCursor );
 				}
+				else{
+					updateCameraUnimanually( cursor );
+				}
 			}
 		}
 
-		if (cursor.isStylusOrEraser() || cursor.supportsMultipleInstances()) { // stylus or mouse
+		//Actions on the canvas
+		else if (cursor.isStylusOrEraser() || (cursor.supportsMultipleInstances() && !cameraModeEnabled)) { // stylus or mouse
 
 
 			switch ( stylusMode ) {
@@ -322,9 +333,80 @@ class DrawingCanvas implements MultitouchReceiver {
 					break;
 				}
 				break;
-			}
-		}
-	}
+            case ERASE_MODE :
+                switch ( cursor.getDistanceStateEventType() ) {
+                    case MultitouchCursor.EVENT_OUT_OF_RANGE_TO_TOUCHING :
+                    case MultitouchCursor.EVENT_HOVERING_TO_TOUCHING :
+                        inputCursor = cursor;
+                        inputCursor.setSavingOfHistory( true );
+
+                        break;
+                    case MultitouchCursor.EVENT_WHILE_TOUCHING :
+                        // nothing to do but redraw
+                        MultitouchFramework.Assert( inputCursor == cursor, "f351ad54" );
+
+                        pressure = inputCursor.old_pressure;
+
+                        break;
+                    case MultitouchCursor.EVENT_TOUCHING_TO_OUT_OF_RANGE :
+                    case MultitouchCursor.EVENT_TOUCHING_TO_HOVERING :
+
+                        MultitouchFramework.Assert( inputCursor == cursor, "a03d5271" );
+                        // Add the newly drawn stroke to the drawing
+
+                        // Find the plane on which to project the stroke
+                        Vector3D backwardVector = camera.getForwardVector().negated();
+                        int dimension = backwardVector.indexOfGreatestComponent();
+                        Vector3D normalToWorkingPlane = new Vector3D(0,0,0);
+                        normalToWorkingPlane.v[dimension] = backwardVector.v[dimension];
+                        normalToWorkingPlane = normalToWorkingPlane.normalized();
+                        Plane plane = new Plane( normalToWorkingPlane, workingOrigin );
+
+                        Stroke newStroke = new Stroke();
+                        newStroke.setStroke(pressure);
+
+                        //Draws the points according to the history of points
+                        for ( Point2D p : inputCursor.getHistoryOfPositions() ) {
+                            Ray3D ray = camera.computeRay( p.x(), p.y() );
+                            Point3D intersection = new Point3D();
+                            if ( plane.intersects( ray, intersection, true ) ) {
+                                newStroke.addPoint( intersection );
+                            }
+                        }
+
+                        ArrayList<Stroke> strokesToRemove = new ArrayList<>();
+                        ArrayList<Point3D> newP3D = newStroke.getPoints3D();
+
+                        for (int j = 1; j < newP3D.size(); j++) {
+                            Point3D newP0 = newP3D.get(j - 1);
+                            Point3D newP1 = newP3D.get(j);
+
+                            for ( int i = 0; i < drawing.strokes.size(); i++ ) {
+                                Stroke s = drawing.strokes.get(i);
+                                ArrayList<Point3D> points3D = s.getPoints3D();
+
+                                for ( int ij = 1; ij < points3D.size(); ++ij ) {
+                                    Point3D oldP2 = points3D.get(ij - 1);
+                                    Point3D oldP3 = points3D.get(ij);
+
+                                    if (Vector3D.detectedAnIntersection3D(newP0, newP1, oldP2, oldP3)) {
+                                        strokesToRemove.add(s);
+                                    }
+                                }
+                            }
+                        }
+
+                        for (Stroke s : strokesToRemove) {
+                            drawing.strokes.remove(s);
+                        }
+
+                        inputCursor = null;
+                        break;
+                }
+                break;
+            }
+        }
+    }
 
 	private void updateCameraUnimanually( MultitouchCursor cursor ) {
 		Point2D newP = cursor.getCurrentPosition();
@@ -580,6 +662,8 @@ class ToolbarButton implements MultitouchReceiver {
 		switch ( cursor.getDistanceStateEventType() ) {
 		case MultitouchCursor.EVENT_TOUCHING_TO_OUT_OF_RANGE :
 		case MultitouchCursor.EVENT_TOUCHING_TO_HOVERING :
+			//Removing this line makes the App always in finger mode without movement of camera
+			this.toolbar.setButtonPressed(-1);
 			if ( isOverButton( cursor.x, cursor.y ) ) {
 				if ( hasConfirmationBox() ) {
 					isConfirmationBoxOpen = true;
@@ -595,7 +679,11 @@ class ToolbarButton implements MultitouchReceiver {
 				isConfirmationBoxOpen = false;
 			}
 			break;
+			case MultitouchCursor.DS_TOUCHING :
+				this.toolbar.setButtonPressed(iconIndex);
+				break;
 		}
+
 	}
 
 	public void draw( GraphicsWrapper gw ) {
@@ -650,7 +738,9 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 	private static final int BM_PURPLE_INK = 10; // radio button group C
 	private static final int BM_GREY_INK = 11;   // radio button group C
 	private static final int BM_UNDO = 12;
-	private static final int NUM_BITMAPS = 13;
+	private static final int BM_CAMERA = 13;
+    private static final int BM_ERASE = 14;
+    private static final int NUM_BITMAPS = 15;
 
 	// These indices will be used to index into an array,
 	// and thus should start at zero.
@@ -667,7 +757,12 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 	private static final int TB_PURPLE_INK = 9; // radio button group C
 	private static final int TB_GREY_INK = 10;  // radio button group C
 	private static final int TB_UNDO = 11;
-	private static final int NUM_TOOLBAR_BUTTONS = 12;
+
+	private static final int TB_CAMERA = 12;
+
+    private static final int TB_ERASE = 13;
+
+	private static final int NUM_TOOLBAR_BUTTONS = 14;
 
 	public MultitouchFramework mf = null;
 	DrawingCanvas drawingCanvas = null;
@@ -677,6 +772,9 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 
 	private int stylusMode_toolbarButton = TB_INKING_TOOL;
 	private int colorMode_toolbarButton = TB_BLACK_INK;
+	private boolean cameraModeEnabled = true;
+
+
 
 	public Toolbar( MultitouchFramework mf, DrawingCanvas dc ) {
 		this.mf = mf;
@@ -695,7 +793,10 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		mf.loadBitmap( BM_BLUE_INK,                       R.drawable.color_0080ff );
 		mf.loadBitmap( BM_PURPLE_INK,                     R.drawable.color_ff00ff );
 		mf.loadBitmap( BM_GREY_INK,                       R.drawable.color_808080 );
-		mf.loadBitmap( BM_UNDO,               R.drawable.undo );
+		mf.loadBitmap( BM_UNDO,               			  R.drawable.undo );
+		mf.loadBitmap( BM_CAMERA,               			  R.drawable.camera );
+        mf.loadBitmap( BM_ERASE,                          R.drawable.eraser );
+
 
 		buttons = new ToolbarButton[ NUM_TOOLBAR_BUTTONS ];
 		int index = 0;
@@ -735,6 +836,13 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		buttons[index++] = new ToolbarButton(mf,this,x0,0,iconSize,iconSize,"Undo",
 				BM_UNDO,-1,-1); x0 += iconSize;
 
+		buttons[index++] = new ToolbarButton(mf,this,x0,0,iconSize,iconSize,"Camera",
+				BM_CAMERA,-1,-1); x0 += iconSize;
+
+        //ERASE
+        buttons[index++] = new ToolbarButton(mf,this,x0,0,iconSize,iconSize,"Erase",
+                BM_ERASE,-1,-1); x0 += iconSize;
+
 
 		MultitouchFramework.Assert( index == NUM_TOOLBAR_BUTTONS, "e4ef8900" );
 
@@ -743,7 +851,9 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		}
 	}
 
-
+	public void setButtonPressed(int id){
+		this.drawingCanvas.buttonPressed = id;
+	}
 
 	private void setStylusMode( int toolbarButton ) {
 		stylusMode_toolbarButton = toolbarButton;
@@ -757,6 +867,9 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 			case TB_INKING_SYMMETRICAL_TOOL :
 				drawingCanvas.setStylusMode( DrawingCanvas.STYLUS_MODE_INKING_SYMMETRICAL );
 				break;
+            case TB_ERASE :
+                drawingCanvas.setStylusMode( DrawingCanvas.ERASE_MODE );
+                break;
 			default:
 				MultitouchFramework.Assert( false, "2dba096b" );
 		}
@@ -829,6 +942,15 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		else if (button == buttons[TB_UNDO]){
 			drawingCanvas.undo();
 		}
+		else if (button == buttons[TB_CAMERA]){
+			//Enable / Disable camera according to current state of button
+			cameraModeEnabled = !cameraModeEnabled;
+			this.drawingCanvas.cameraModeEnabled = cameraModeEnabled;
+		}
+        else if ( button == buttons[ TB_ERASE ] ) {
+            setStylusMode( TB_ERASE );
+        }
+
 		else if ( button == buttons[ TB_RECTANGLE_LASSO_SELECTION_TOOL ] ) {
 			setStylusMode( TB_RECTANGLE_LASSO_SELECTION_TOOL );
 		}
@@ -891,6 +1013,12 @@ class Toolbar implements MultitouchDispatcher, MultitouchReceiver {
 		gw.setColor(1,0,0);
 		drawHighlightingForButton( gw, stylusMode_toolbarButton );
 		drawHighlightingForButton( gw, colorMode_toolbarButton );
+
+		if(cameraModeEnabled){
+			drawHighlightingForButton(gw, TB_CAMERA);
+		}
+
+
 	}
 }
 
