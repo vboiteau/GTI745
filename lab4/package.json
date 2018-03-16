@@ -1,0 +1,31 @@
+{
+  "name": "gti745-lab4",
+  "version": "0.0.0",
+  "description": "gti745 fourth lab",
+  "license": "MIT",
+  "dependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "d3": "^4.13.0",
+    "html-webpack-plugin": "^3.0.6",
+    "webpack": "^3.10.0"
+  },
+  "scripts": {
+    "browserify": "browser-sync start --server 'dist' --files dist --no-open --no-notify",
+    "build": "webpack",
+    "dev": "concurrently --kill-others \"npm run browserify\" \"webpack -w\"",
+    "start": "npm run build && npm run browserify",
+    "watch": "npm run dev"
+  },
+  "devDependencies": {
+    "browser-sync": "^2.23.5",
+    "concurrently": "^3.5.1",
+    "eslint": "^4.9.0",
+    "eslint-config-airbnb-base": "12.1.0",
+    "eslint-plugin-import": "^2.7.0",
+    "pre-commit": "^1.2.2"
+  }
+}
