@@ -21,6 +21,13 @@ module.exports = {
         loaders: [
             {
                 test: /\.jsx?$/, loader: 'babel-loader', exclude: /node_modules/
+            },
+            {
+                test: /\.(csv|txt)/,
+                loader: 'file-loader',
+                options: {
+                    name: '[path][name].[ext]'
+                }
             }
         ]
     },
