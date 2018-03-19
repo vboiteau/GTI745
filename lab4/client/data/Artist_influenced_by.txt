@@ -1,4 +1,4 @@
-# pgid, influencer_artist, influencer_pgid, influencer_genre
+pgid,influencer_artist,influencer_pgid,influencer_genre
 "09fexqtgld0e","Patti Smith","jpfixqtgld0e","Rock"
 "09fexqtgld0e","The Velvet Underground","giftxqr5ldde","Rock"
 "09fexqtgld0e","T. Rex","0ifixqr5ldae","Rock"

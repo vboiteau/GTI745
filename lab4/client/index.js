@@ -1,4 +1,4 @@
-import * as d3 from 'd3';
+    import * as d3 from 'd3';
 import Artist from './data/Artist.txt';
 import ArtistInf from './data/Artist_influenced_by.txt';
 
@@ -6,10 +6,8 @@ const svg = d3.select("svg");
 const width = document.querySelector('svg').clientWidth;
 const height = document.querySelector('svg').clientHeight;
 
-console.log(width, height, document);
-
-const color = d3.scaleOrdinal(d3.schemeCategory20);
-const simulation = d3.forceSimulation()
+var color = d3.scaleOrdinal(d3.schemeCategory20);
+var simulation = d3.forceSimulation()
     .force("link", d3.forceLink().id(function(d) {
         return d.id;
     }))
@@ -17,46 +15,59 @@ const simulation = d3.forceSimulation()
     .force("center", d3.forceCenter(width / 2, height / 2));
 
 d3.csv(Artist, artist => Object.assign(artist, {
-    id: artist['# pgid']
+    id: artist['pgid']
 }), (err, artists) => {
     const artistIds = artists.map(({ id }) => id);
     d3.csv(ArtistInf, influence => Object.assign(influence, {
-        source: influence['# pgid'],
-        target: influence[' influencer_pgid']
+        source: influence['pgid'],
+        target: influence['influencer_pgid']
     }), (err, influences) => {
+
         influences = influences.filter(({ source, target }) => artistIds.includes(source) && artistIds.includes(target));
-        const link = svg.append('g')
+
+        var reduced = getAmountOfNodes(100, influences, artists);
+        
+        var link = svg.append('g')
             .attr('class', 'links')
             .selectAll('line')
-            .data(influences)
+            .data(reduced.influences)
             .enter()
             .append('line')
             .attr('stroke-width', function(d) { 
                 return 2;
             });
 
-        const node = svg.append('g')
+        var node = svg.append('g')
             .attr('class', 'nodes')
-            .selectAll('circle')
-            .data(artists)
-            .enter().append('circle')
-            .attr('r', 5)
-            .attr('fill', d => 'black')
+            .selectAll('nodes')
+            .data(reduced.artists)
+            .enter().append('g')
+            .attr('class', 'node')
             .call(d3.drag()
                 .on('start', dragstarted)
                 .on('drag', dragged)
-                .on('end', dragended));
+                .on('end', dragended))
+            .on("mouseover",function(){
+              console.log("Bring to front")
+            });
 
-        node.append('title')
-            .text(d => d.id);
+        node.append("circle")
+            .attr('r', 5)
+            .attr('fill', d => 'black')
+
+        node.append("text")
+            .attr("x", 12)
+            .attr("dy", ".35em")
+            .attr("fill", "red")
+            .text(function (d) { return d.artist; });
 
         simulation
-            .nodes(artists)
+            .nodes(reduced.artists)
             .on('tick', ticked);
 
         simulation
             .force('link')
-            .links(influences);
+            .links(reduced.influences);
 
         function ticked() {
             link
@@ -68,15 +79,13 @@ d3.csv(Artist, artist => Object.assign(artist, {
                 })
                 .attr("x2", d => d.target.x)
                 .attr("y2", d => d.target.y);
-
             node
-                .attr("cx", function(d) { 
-                    return d.x;
-                })
-                .attr("cy", function(d) {
-                    return d.y;
+                .attr("transform", function (d) {
+                    return "translate(" + d.x + "," + d.y + ")";
                 });
         }
+
+
     });
 });
 
@@ -96,4 +105,40 @@ function dragended(d) {
   if (!d3.event.active) simulation.alphaTarget(0);
   d.fx = null;
   d.fy = null;
+}
+
+//Gets X amount of nodes to display with their influence links
+function getAmountOfNodes(amount, influences, artists){
+
+    var inf = [];
+    var art = [];
+    var count = 0;
+
+    influences.forEach(influence => {
+
+        if(count < amount){
+
+            //For actual pgid of the artist
+            if(!art.map(a => {return a.pgid}).includes(influence.pgid)){
+                art.push(artists.find(a => {return a.pgid === influence.pgid}));
+                count++;
+            }
+            //For the influencer's pgid
+            if(!art.map(a => {return a.pgid}).includes(influence.influencer_pgid)){
+                //Finds the influencers ID inside the list
+                art.push(artists.find(a => {return a.pgid === influence.influencer_pgid}));
+                count++;
+            }
+
+            //We add the influence link
+            inf.push(influence);
+        }
+
+    });
+
+    return {
+        "artists": art,
+        "influences": inf
+    }
+
 }

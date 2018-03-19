@@ -1,4 +1,4 @@
-# pgid, tier, artist, act_yrs, existence_year, born_form_place, ceased_year, ceased_place, amgid, born_name, is_solo
+pgid,tier,artist,act_yrs,existence_year,born_form_place,ceased_year,ceased_place, amgid,born_name,is_solo
 "09fexqtgld0e","1st","R.E.M.","80s-00s","1980","Athens, GA",,,"P   116437","NULL","0"
 "09fixqe5ldje","2nd","Slint","80s, 90s","1987","Louisville, KY","1992",,"P    14287","NULL","0"
 "09foxqe5ldse","2nd","Ween","90s, 00s","1984","New Hope, PA",,,"P    14697","NULL","0"
