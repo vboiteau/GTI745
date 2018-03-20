@@ -16,6 +16,11 @@ const simulation = d3.forceSimulation()
     .force("charge", d3.forceManyBody())
     .force("center", d3.forceCenter(width / 2, height / 2));
 
+const tooltip = d3.select("body")
+    .append("div")
+    .attr('class', 'tooltip')
+    .style('opacity', 0);
+
 d3.csv(Artist, artist => Object.assign(artist, {
     id: artist['# pgid']
 }), (err, artists) => {
@@ -42,13 +47,23 @@ d3.csv(Artist, artist => Object.assign(artist, {
             .enter().append('circle')
             .attr('r', 5)
             .attr('fill', d => 'black')
+            .on('mouseover', d => {
+                console.log(d, 'mouseover');
+                tooltip.transition()
+                    .duration(200)
+                    .style('opacity', 1);
+                tooltip.html(d[' artist']);
+            })
+            .on('mouseout', d => {
+                console.log(d, 'mouseout');
+                tooltip.transition()
+                    .duration(200)
+                    .style('opacity', 0);
+            })
             .call(d3.drag()
                 .on('start', dragstarted)
                 .on('drag', dragged)
                 .on('end', dragended));
-
-        node.append('title')
-            .text(d => d.id);
 
         simulation
             .nodes(artists)
@@ -79,7 +94,6 @@ d3.csv(Artist, artist => Object.assign(artist, {
         }
     });
 });
-
 
 function dragstarted(d) {
   if (!d3.event.active) simulation.alphaTarget(0.3).restart();
