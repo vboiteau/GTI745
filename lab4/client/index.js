@@ -16,13 +16,13 @@ d3.csv(Artist, artist => Object.assign(artist, {
 
         influences = influences.filter(({ source, target }) => artistIds.includes(source) && artistIds.includes(target));
 
-        var reduced = getAmountOfNodes(40, influences, artists);
+        var reduced = getAmountOfNodes(100, influences, artists);
 
         var forceGraph = new ForceGraph(reduced.artists, reduced.influences, svg);
 
         forceGraph.init();
 
-        setTimeout(function(){forceGraph.disposeInCircle()}, 5000)
+        //setTimeout(function(){forceGraph.disposeInCircle()}, 1000)
         
     });
 });
@@ -62,7 +62,7 @@ function getAmountOfNodes(amount, influences, artists){
     }
 
 }
-
+    
 window.onresize = function(){
 
     svg.attr('width', window.innerWidth);
