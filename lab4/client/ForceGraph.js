@@ -3,6 +3,11 @@ import * as d3 from 'd3';
 //Constants
 const LABEL_OFFSET = 12;
 
+var tooltip = d3.select("body")
+    .append("div")
+    .attr('id', 'tooltip')
+    .style('opacity', 0);
+
 //Creates a Force Graph knowing the nodes, the links and the SVG container
 class ForceGraph{
 
@@ -55,17 +60,23 @@ class ForceGraph{
             .data(this.nodesData)
             .enter().append('g')
             .attr('class', 'node')
+            .on('mouseover', d => {
+                console.log(d, 'mouseover');
+                tooltip.transition()
+                    .duration(200)
+                    .style('opacity', 1);
+                tooltip.html(d['artist']);
+            })
+            .on('mouseout', d => {
+                console.log(d, 'mouseout');
+                tooltip.transition()
+                    .duration(200)
+                    .style('opacity', 0);
+            })
             .call(d3.drag()
                 .on('start', this.onNodeDragStart.bind(this))
                 .on('drag', this.onNodeDragged.bind(this))
                 .on('end', this.onNodeDragEnd.bind(this)))
-            .on("mouseover",function(d){
-            	//Makes the label go in front, so other nodes don't overlap
-
-            	document.getElementById("tooltip").innerHTML = d.artist;
-
-                this.parentElement.appendChild(this);
-            });
 
         //Circle element inside the <g> element (node)
         this.circleElements = this.nodeElements.append("circle")
@@ -159,6 +170,8 @@ class ForceGraph{
 
 		var self = this;
 
+		self.simulation.stop()
+
 		var size = d3.selectAll(".node").size();
 		var cX = this.width/2;
 		var cY = this.height/2;
@@ -219,7 +232,7 @@ class ForceGraph{
 				});
 
 			}
-			else if(!trgt.empty()){
+			if(!trgt.empty()){
 
 				trgt.each(function(line){
 
@@ -262,7 +275,7 @@ class ForceGraph{
 			.attr('y2', line.y2)
 		})
 
-		//self.simulation.alpha(0.3).restart();
+		self.simulation.alpha(0.3).restart();
 
 	}
 
