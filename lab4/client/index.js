@@ -1,18 +1,9 @@
-    import * as d3 from 'd3';
+import * as d3 from 'd3';
 import Artist from './data/Artist.txt';
 import ArtistInf from './data/Artist_influenced_by.txt';
+import { ForceGraph } from './ForceGraph.js'
 
-const svg = d3.select("svg");
-const width = document.querySelector('svg').clientWidth;
-const height = document.querySelector('svg').clientHeight;
-
-var color = d3.scaleOrdinal(d3.schemeCategory20);
-var simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(function(d) {
-        return d.id;
-    }))
-    .force("charge", d3.forceManyBody())
-    .force("center", d3.forceCenter(width / 2, height / 2));
+var svg = d3.select("svg");
 
 d3.csv(Artist, artist => Object.assign(artist, {
     id: artist['pgid']
@@ -25,87 +16,16 @@ d3.csv(Artist, artist => Object.assign(artist, {
 
         influences = influences.filter(({ source, target }) => artistIds.includes(source) && artistIds.includes(target));
 
-        var reduced = getAmountOfNodes(100, influences, artists);
+        var reduced = getAmountOfNodes(40, influences, artists);
+
+        var forceGraph = new ForceGraph(reduced.artists, reduced.influences, svg);
+
+        forceGraph.init();
+
+        setTimeout(function(){forceGraph.disposeInCircle()}, 5000)
         
-        var link = svg.append('g')
-            .attr('class', 'links')
-            .selectAll('line')
-            .data(reduced.influences)
-            .enter()
-            .append('line')
-            .attr('stroke-width', function(d) { 
-                return 2;
-            });
-
-        var node = svg.append('g')
-            .attr('class', 'nodes')
-            .selectAll('nodes')
-            .data(reduced.artists)
-            .enter().append('g')
-            .attr('class', 'node')
-            .call(d3.drag()
-                .on('start', dragstarted)
-                .on('drag', dragged)
-                .on('end', dragended))
-            .on("mouseover",function(){
-              console.log("Bring to front")
-            });
-
-        node.append("circle")
-            .attr('r', 5)
-            .attr('fill', d => 'black')
-
-        node.append("text")
-            .attr("x", 12)
-            .attr("dy", ".35em")
-            .attr("fill", "red")
-            .text(function (d) { return d.artist; });
-
-        simulation
-            .nodes(reduced.artists)
-            .on('tick', ticked);
-
-        simulation
-            .force('link')
-            .links(reduced.influences);
-
-        function ticked() {
-            link
-                .attr("x1", function(d) {
-                    return d.source.x;
-                })
-                .attr("y1", function(d) {
-                    return d.source.y;
-                })
-                .attr("x2", d => d.target.x)
-                .attr("y2", d => d.target.y);
-            node
-                .attr("transform", function (d) {
-                    return "translate(" + d.x + "," + d.y + ")";
-                });
-        }
-
-
     });
 });
-
-
-function dragstarted(d) {
-  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-  d.fx = d.x;
-  d.fy = d.y;
-}
-
-function dragged(d) {
-  d.fx = d3.event.x;
-  d.fy = d3.event.y;
-}
-
-function dragended(d) {
-  if (!d3.event.active) simulation.alphaTarget(0);
-  d.fx = null;
-  d.fy = null;
-}
 
 //Gets X amount of nodes to display with their influence links
 function getAmountOfNodes(amount, influences, artists){
@@ -141,4 +61,10 @@ function getAmountOfNodes(amount, influences, artists){
         "influences": inf
     }
 
+}
+
+window.onresize = function(){
+
+    svg.attr('width', window.innerWidth);
+    svg.attr('height', window.innerHeight);
 }

@@ -7,8 +7,19 @@
     <style type="text/css" media="screen">
       html,
       body {
-        width: 100%;
-        height: 100%;
+        margin: 0px;
+        overflow: hidden;
+        position: relative;
+      }
+      svg{
+        z-index: -1;
+      }
+      #tooltip{
+        position: absolute;
+        color: red;
+        font: 24px sans-serif;
+        bottom: 0px;
+        left: 0px;
       }
       .links line {
         stroke: #999;
@@ -31,8 +42,9 @@
     </style>
   </head>
   <body>
-    <svg width="100%" height="100%">
+    <svg>
     </svg>
     <script src="bundle.js"></script>
+    <div id="tooltip"></div>
   </body>
 </html>
