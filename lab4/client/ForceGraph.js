@@ -61,14 +61,12 @@ class ForceGraph{
             .enter().append('g')
             .attr('class', 'node')
             .on('mouseover', d => {
-                console.log(d, 'mouseover');
                 tooltip.transition()
                     .duration(200)
                     .style('opacity', 1);
                 tooltip.html(d['artist']);
             })
             .on('mouseout', d => {
-                console.log(d, 'mouseout');
                 tooltip.transition()
                     .duration(200)
                     .style('opacity', 0);
@@ -208,9 +206,6 @@ class ForceGraph{
 			if(!src.empty()){
 				
 				src.each(function(line){
-
-					console.log(this)
-
 					if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
 					{
 						lineChanges.push({
@@ -235,9 +230,6 @@ class ForceGraph{
 			if(!trgt.empty()){
 
 				trgt.each(function(line){
-
-					console.log(this)
-
 					if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
 					{
 						lineChanges.push({
@@ -260,8 +252,6 @@ class ForceGraph{
 			}
 
 		});
-
-		console.log(lineChanges.length)
 
 		//Call the transition to move the line according to node layout
 		lineChanges.forEach(line => {
