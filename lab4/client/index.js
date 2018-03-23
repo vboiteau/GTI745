@@ -22,7 +22,7 @@ d3.csv(Artist, artist => Object.assign(artist, {
 
         forceGraph.init();
 
-        //setTimeout(function(){forceGraph.disposeInCircle()}, 1000)
+        //setTimeout(function(){forceGraph.disposeInCircle(".node")}, 1000)
         
     });
 });

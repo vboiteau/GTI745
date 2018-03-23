@@ -8,10 +8,17 @@ var tooltip = d3.select("body")
     .attr('id', 'tooltip')
     .style('opacity', 0);
 
+const KEYS = {
+	ESCAPE : 27,
+	C : 67
+}
+
 //Creates a Force Graph knowing the nodes, the links and the SVG container
 class ForceGraph{
 
 	constructor(nodes, links, container){
+
+		var self = this;
 
 		this.container = container;
 
@@ -24,6 +31,14 @@ class ForceGraph{
 		this.height = window.innerHeight;
 		this.container.attr('width', this.width).attr('height', this.height);
 
+		//For keypresses on keyboard
+		d3.select('body').on('keydown', this.keyDownHandler.bind(this))
+		d3.select('body').on('keyup', this.keyUpHandler.bind(this))
+
+		this.container.on('mousemove', function(){
+			self.currentPosition = d3.mouse(this);
+		});
+
 		//Setting up the d3 simulation
 		this.simulation = d3.forceSimulation();
 		this.simulation
@@ -33,6 +48,14 @@ class ForceGraph{
 		    .force("charge", d3.forceManyBody())
 		    .force("center", d3.forceCenter(this.width / 2, this.height / 2));
 
+		//To contain shift selected nodes
+		this.selectedNodes = [];
+
+		this.transformFactor = {
+			"k" : 1,
+			"x" : 0,
+			"y" : 0
+		}
 	}
 
 	init(){
@@ -48,10 +71,12 @@ class ForceGraph{
             .force('link')
             .links(this.linksData);
 
-        this.initZoom();
+        this.enableZoom();
 	}
 
 	initNodes(){
+
+		var self = this;
 
 		//Root <g> element of the node
 		this.nodeElements = this.container.append('g')
@@ -61,17 +86,34 @@ class ForceGraph{
             .enter().append('g')
             .attr('class', 'node')
             .on('mouseover', d => {
-                console.log(d, 'mouseover');
+                //console.log(d, 'mouseover');
                 tooltip.transition()
                     .duration(200)
                     .style('opacity', 1);
                 tooltip.html(d['artist']);
             })
             .on('mouseout', d => {
-                console.log(d, 'mouseout');
+                //console.log(d, 'mouseout');
                 tooltip.transition()
                     .duration(200)
                     .style('opacity', 0);
+            })
+            .on('click', function() {
+
+            	if(!self.shiftKey)
+            		return;
+
+            	if(self.selectedNodes.indexOf(this) < 0){
+
+            		self.selectedNodes.push(this);
+
+            		d3.select(this).classed('selected', true);
+
+	            	d3.select(this).selectAll('circle')
+	            		.style('stroke-width', 2)
+	            		.style('stroke', '#999')
+            	}
+
             })
             .call(d3.drag()
                 .on('start', this.onNodeDragStart.bind(this))
@@ -81,7 +123,8 @@ class ForceGraph{
         //Circle element inside the <g> element (node)
         this.circleElements = this.nodeElements.append("circle")
             .attr('r', 5)
-            .attr('fill', d => 'black')
+            .attr('fill', d => '#f92a34')
+            
 
         //Label element inside the <g> element (node)
         /*this.labelElements = this.nodeElements.append("text")
@@ -107,13 +150,30 @@ class ForceGraph{
 	}
 
 	//Allows dragging and zooming for the graph
-	initZoom(){
+	enableZoom(){
+
+		console.log("Zooming Enabled")
 
         this.zoomHandler = d3.zoom()
             .on("zoom", this.onZoom.bind(this));
 
         this.zoomHandler(this.container); 
 
+	}
+
+	disableZoom(){
+
+		console.log("Zooming Disabled")
+
+		this.zoomHandler.on("zoom", null);
+	}
+
+	onZoom(){
+
+		this.transformFactor = d3.event.transform;
+
+		this.linkElements.attr("transform", d3.event.transform)
+    	this.nodeElements.attr("transform", d3.event.transform)
 	}
 
 	//Basically the update when the graphs changes
@@ -139,11 +199,6 @@ class ForceGraph{
 	            .attr("y", function(d) { return d.y + LABEL_OFFSET; });
 	}
 
-	onZoom(){
-		this.linkElements.attr("transform", d3.event.transform)
-        this.nodeElements.attr("transform", d3.event.transform)
-	}
-
 	/* Node dragging methods */
 
 	//Start
@@ -161,27 +216,25 @@ class ForceGraph{
 
 	//End
 	onNodeDragEnd(d) {
-	if (!d3.event.active) this.simulation.alphaTarget(0);
+		if (!d3.event.active) this.simulation.alphaTarget(0);
 		d.fx = null;
 		d.fy = null;
 	}
 
-	disposeInCircle(){
+	disposeInCircle(className, cX=this.width/2, cY=this.height/2){
 
 		var self = this;
 
 		self.simulation.stop()
 
-		var size = d3.selectAll(".node").size();
-		var cX = this.width/2;
-		var cY = this.height/2;
+		var size = d3.selectAll(className).size();
 
 		var lineChanges = []
 
-		//Setting positions around the circle (INSTANT)
-		d3.selectAll(".node").each(function(d, i){
+		//Setting positions around the circle
+		d3.selectAll(className).each(function(d, i){
 
-			var coord = self.calculateCircleCoords(i, size);
+			var coord = self.calculateCircleCoords(i, size, cX, cY);
 
 			d3.select(this).select('circle')
 				.transition()
@@ -202,21 +255,20 @@ class ForceGraph{
 			var src = d3.selectAll(".links line").filter(function(l){return l.source === d})
 			var trgt = d3.selectAll(".links line").filter(function(l){return l.target === d})
 
-
 			//We must do this because we can't put multiple transitions separatly on a DOM element.
 			//We must keep a reference to the lines and how they must be changed and use transition once.
 			if(!src.empty()){
 				
 				src.each(function(line){
 
-					console.log(this)
-
 					if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
 					{
 						lineChanges.push({
 							"line": this, 
 							"x1": coord.x, 
-							"y1": coord.y
+							"y1": coord.y,
+							"x2": line.target.x,
+							"y2": line.target.y
 						});
 					}
 					else{
@@ -236,12 +288,13 @@ class ForceGraph{
 
 				trgt.each(function(line){
 
-					console.log(this)
-
+					//If not already in list
 					if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
 					{
 						lineChanges.push({
 							"line": this, 
+							"x1": line.source.x,
+							"y1": line.source.y,
 							"x2": coord.x, 
 							"y2": coord.y
 						});
@@ -261,8 +314,6 @@ class ForceGraph{
 
 		});
 
-		console.log(lineChanges.length)
-
 		//Call the transition to move the line according to node layout
 		lineChanges.forEach(line => {
 
@@ -275,18 +326,19 @@ class ForceGraph{
 			.attr('y2', line.y2)
 		})
 
-		self.simulation.alpha(0.3).restart();
+		setTimeout(function(){
+			self.simulation.alpha(0.3).restart();
+		}, 1000)
 
 	}
 
-	calculateCircleCoords(i, numberOfNodes){
+	calculateCircleCoords(i, numberOfNodes, cX, cY){
 
 		var angle = i * (2*Math.PI/numberOfNodes);
 
-		var cX = this.width/2;
-		var cY = this.height/2;
+		var arcLength = 2*Math.PI/numberOfNodes;
 
-		var radius = 400;
+		var radius = 20/arcLength;
 
 		return {
 			"x" : cX + radius * Math.cos(angle), 
@@ -294,6 +346,78 @@ class ForceGraph{
 		}
 
 		
+	}
+
+	keyDownHandler(){
+
+		this.shiftKey = d3.event.shiftKey || d3.event.metaKey;
+		this.ctrlKey = d3.event.ctrlKey;
+
+		if(this.shiftKey){
+			this.disableZoom();
+		}
+
+	}
+
+	keyUpHandler(){
+
+		//Enable zoom if shift was pressed in last keypress, but was released
+		if(this.shiftKey && !d3.event.shiftKey){
+			this.enableZoom()
+		}
+
+		this.shiftKey = d3.event.shiftKey || d3.event.metaKey;
+		this.ctrlKey = d3.event.ctrlKey;
+
+		/* SHIFT + KEYBIND */
+		if(this.shiftKey){
+
+		}
+
+		/* CTRL + KEYBIND */
+
+		if(this.ctrlKey){
+
+		}
+
+		/* REGULAR KEYBINDS */
+
+		//Unselect when pressing escape
+		if(d3.event.keyCode == KEYS.ESCAPE){
+			console.log("Unselect nodes")
+			
+			this.selectedNodes.forEach(function(d){
+
+				d3.select(d).classed('selected', false);
+
+				d3.select(d).selectAll('circle')
+            		.style('stroke-width', 0)
+
+			})
+
+			this.selectedNodes = [];
+
+		}
+
+		//Circle layout Selection at position
+		if(d3.event.keyCode == KEYS.C){
+
+			//Better have atleast 3 nodes so it looks like a circle
+			if(this.selectedNodes.length <= 2)
+				return;
+
+			//Coords according to current transform
+			this.currentPosition[0] = (this.currentPosition[0]-this.transformFactor.x) / this.transformFactor.k
+			this.currentPosition[1] = (this.currentPosition[1]-this.transformFactor.y) / this.transformFactor.k
+
+			this.disposeInCircle(
+				".node.selected", 
+				this.currentPosition[0], 
+				this.currentPosition[1]
+			);
+			
+		}
+
 	}
 
 
