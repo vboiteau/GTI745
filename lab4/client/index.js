@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import dataGetter from './dataGetter';
-import { ForceGraph } from './ForceGraph';
+import dataGetter from './data/getter';
+import { ForceGraph } from './graphs/force';
 import ArcGraph from './graphs/arc';
 
 var svg = d3.select("svg");

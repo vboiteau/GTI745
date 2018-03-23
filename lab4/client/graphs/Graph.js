@@ -1,10 +1,12 @@
 import * as d3 from 'd3';
 
 class Graph {
-    constructor(artists, influences, svg) {
+    constructor(artists, influences, svg, zoomable = true) {
         this.artists = artists;
         this.influences = influences;
         this.svg = svg;
+        this.zoomable = zoomable;
+
         this.svg
             .attr('width', this.width)
             .attr('height', this.height);
@@ -14,10 +16,24 @@ class Graph {
             .attr('id', 'tooltip')
             .style('opacity', 0);
 
-        this.influences.forEach(d => {
-            d.source = this.artists.find(artist => artist.id === d.source);
-            d.target = this.artists.find(artist => artist.id === d.target);
-        });
+        this.plot = svg.append('g')
+            .attr('transform', `translate(${this.pad}, ${this.pad})`);
+
+        this.onZoom = this.onZoom.bind(this);
+
+        this.links = null;
+    }
+
+    init() {
+        this.initZoom();
+    }
+
+    get margin() {
+        return 40;
+    }
+
+    get pad() {
+        return this.margin / 2;
     }
 
     drawNodes() {
@@ -55,6 +71,24 @@ class Graph {
     get height() {
         return window.innerHeight;
     }
+    
+	//Allows dragging and zooming for the graph
+	initZoom(){
+
+        this.zoomHandler = d3.zoom()
+            .on('zoom', this.onZoom);
+
+        this.zoomHandler(this.svg); 
+
+	}
+
+	onZoom() {
+        if (this.zoomable) {
+            this.links.attr("transform", d3.event.transform)
+            this.nodes.attr("transform", d3.event.transform)
+        }
+	}
+
 }
 
 export default Graph;

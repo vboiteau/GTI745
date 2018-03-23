@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import Graph from './Graph';
 
 //Constants
 const LABEL_OFFSET = 12;
@@ -9,20 +10,10 @@ var tooltip = d3.select("body")
     .style('opacity', 0);
 
 //Creates a Force Graph knowing the nodes, the links and the SVG container
-class ForceGraph{
+class ForceGraph extends Graph {
 
-	constructor(nodes, links, container){
-
-		this.container = container;
-
-		//Data
-		this.nodesData = nodes;
-		this.linksData = links;
-
-		//By default the graph takes the whole screen
-		this.width = window.innerWidth;
-		this.height = window.innerHeight;
-		this.container.attr('width', this.width).attr('height', this.height);
+	constructor(artists, influences, svg){
+        super(artists, influences, svg);
 
 		//Setting up the d3 simulation
 		this.simulation = d3.forceSimulation();
@@ -33,91 +24,58 @@ class ForceGraph{
 		    .force("charge", d3.forceManyBody())
 		    .force("center", d3.forceCenter(this.width / 2, this.height / 2));
 
+        this.onNodeDragStart = this.onNodeDragStart.bind(this);
+        this.onNodeDragged = this.onNodeDragged.bind(this);
+        this.onNodeDragEnd = this.onNodeDragEnd.bind(this);
+        this.onTick = this.onTick.bind(this);
 	}
 
 	init(){
+        super.init();
 
-		this.initLinks();
-		this.initNodes();
+		this.drawLinks();
+		this.drawNodes();
 
 		this.simulation
-            .nodes(this.nodesData)
-            .on('tick', this.onTick.bind(this));
+            .nodes(this.artists)
+            .on('tick', this.onTick);
 
         this.simulation
             .force('link')
-            .links(this.linksData);
-
-        this.initZoom();
+            .links(this.influences);
 	}
 
-	initNodes(){
-
+	drawNodes(){
 		//Root <g> element of the node
-		this.nodeElements = this.container.append('g')
-            .attr('class', 'nodes')
-            .selectAll('nodes')
-            .data(this.nodesData)
-            .enter().append('g')
-            .attr('class', 'node')
-            .on('mouseover', d => {
-                tooltip.transition()
-                    .duration(200)
-                    .style('opacity', 1);
-                tooltip.html(d['artist']);
-            })
-            .on('mouseout', d => {
-                tooltip.transition()
-                    .duration(200)
-                    .style('opacity', 0);
-            })
+        super.drawNodes();
+		this.nodes
             .call(d3.drag()
-                .on('start', this.onNodeDragStart.bind(this))
-                .on('drag', this.onNodeDragged.bind(this))
-                .on('end', this.onNodeDragEnd.bind(this)))
-
-        //Circle element inside the <g> element (node)
-        this.circleElements = this.nodeElements.append("circle")
-            .attr('r', 5)
-            .attr('fill', d => 'black')
-
-        //Label element inside the <g> element (node)
-        /*this.labelElements = this.nodeElements.append("text")
-            .attr("dy", ".35em")
-            .attr("fill", "red")
-            .text(function (d) { return d.artist; });*/
+                .on('start', this.onNodeDragStart)
+                .on('drag', this.onNodeDragged)
+                .on('end', this.onNodeDragEnd))
 	}
 
 
-	initLinks(){
-
-		//<line> element to represent link
-		this.linkElements = this.container.append('g')
+	drawLinks() {
+		this.links = this.plot.append('g')
             .attr('class', 'links')
             .selectAll('line')
-            .data(this.linksData)
+            .data(this.influences)
             .enter()
             .append('line')
             .attr('stroke-width', function(d) { 
                 return 2;
             })
-
 	}
 
-	//Allows dragging and zooming for the graph
-	initZoom(){
-
-        this.zoomHandler = d3.zoom()
-            .on("zoom", this.onZoom.bind(this));
-
-        this.zoomHandler(this.container); 
-
-	}
 
 	//Basically the update when the graphs changes
 	onTick(){
+        this.nodes
+            .attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
 
-		this.linkElements
+		this.links
             .attr("x1", function(d) {
                 return d.source.x;
             })
@@ -126,20 +84,12 @@ class ForceGraph{
             })
             .attr("x2", d => d.target.x)
             .attr("y2", d => d.target.y);
-        this.circleElements
-            .attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
 
         //If we have labels
         if(this.labelElements)
 	        this.labelElements
 	            .attr("x", function(d) { return d.x + LABEL_OFFSET; })
 	            .attr("y", function(d) { return d.y + LABEL_OFFSET; });
-	}
-
-	onZoom(){
-		this.linkElements.attr("transform", d3.event.transform)
-        this.nodeElements.attr("transform", d3.event.transform)
 	}
 
 	/* Node dragging methods */
@@ -158,13 +108,14 @@ class ForceGraph{
 	}
 
 	//End
-	onNodeDragEnd(d) {
-	if (!d3.event.active) this.simulation.alphaTarget(0);
-		d.fx = null;
-		d.fy = null;
-	}
+    onNodeDragEnd(d) {
+        if (!d3.event.active) this.simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
 
 	disposeInCircle(){
+        console.log('yo');
 
 		var self = this;
 

@@ -4,24 +4,13 @@ import Graph from './Graph';
 // inspiré de http://bl.ocks.org/enjoylife/4e435d329c2c743da33e
 class ArcGraph extends Graph {
     constructor(artists, influences, svg) {
-        super(artists, influences, svg);
-
-        this.plot = svg.append('g')
-            .attr('transform', `translate(${this.pad}, ${this.pad})`);
-
+        super(artists, influences, svg, false);
+        
         this.linearLayout();
 
         this.drawLinks();
 
         this.drawNodes();
-    }
-
-    get margin() {
-        return 40;
-    }
-
-    get pad() {
-        return this.margin / 2;
     }
 
     get xRange() {
@@ -32,6 +21,7 @@ class ArcGraph extends Graph {
     }
 
     init() {
+        super.init();
     }
 
     linearLayout() {
@@ -52,12 +42,13 @@ class ArcGraph extends Graph {
         const arc = d3.radialLine(d3.curveBasis)
             .angle(radians);
 
-        this.plot.selectAll('.link')
+        this.links = this.plot.selectAll('.link')
             .data(this.influences)
             .enter()
             .append('path')
             .attr('class', 'link')
             .attr('transform', (d, i) => {
+                console.log(d);
                 const xShift = d.source.x + (d.target.x - d.source.x) / 2;
                 const yShift = this.pad + this.nodeRadius;
                 return `translate(${xShift}, ${yShift})`;
