@@ -45,7 +45,6 @@ class Graph {
             .attr('class', 'node')
             .attr('id', d => d.id)
             .attr('r', this.nodeRadius)
-            .style('fill', '#1a1a1a')
             .on('mouseover', d => {
                 this.tooltip.transition()
                     .duration(200)

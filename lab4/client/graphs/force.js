@@ -87,7 +87,7 @@ class ForceGraph extends Graph {
 
                     d3.select(this).classed('selected', true);
 
-                    d3.select(this).selectAll('circle')
+                    d3.select(this)
                         .style('stroke-width', 2)
                         .style('stroke', '#999')
                 }
@@ -96,7 +96,6 @@ class ForceGraph extends Graph {
                 .on('start', this.onNodeDragStart)
                 .on('drag', this.onNodeDragged)
                 .on('end', this.onNodeDragEnd))
-            .selectAll('circle')
             .attr('fill', '#f92a34');
 	}
 
@@ -340,7 +339,7 @@ class ForceGraph extends Graph {
 
 				d3.select(d).classed('selected', false);
 
-				d3.select(d).selectAll('circle')
+				d3.select(d)
             		.style('stroke-width', 0)
 
 			})
