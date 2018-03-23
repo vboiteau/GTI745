@@ -19,6 +19,8 @@ class ForceGraph extends Graph {
 	constructor(artists, influences, svg){
         super(artists, influences, svg);
 
+        const self = this;
+
 		//For keypresses on keyboard
 		d3.select('body').on('keydown', this.keyDownHandler.bind(this))
 		d3.select('body').on('keyup', this.keyUpHandler.bind(this))
@@ -70,12 +72,11 @@ class ForceGraph extends Graph {
 	drawNodes(){
 		//Root <g> element of the node
         super.drawNodes();
+        console.log(this.nodes);
+        const self = this;
 		this.nodes
-            .call(d3.drag()
-                .on('start', this.onNodeDragStart)
-                .on('drag', this.onNodeDragged)
-                .on('end', this.onNodeDragEnd))
             .on('click', function() {
+
 
                 if(!self.shiftKey)
                     return;
@@ -91,6 +92,11 @@ class ForceGraph extends Graph {
                         .style('stroke', '#999')
                 }
             })
+            .call(d3.drag()
+                .on('start', this.onNodeDragStart)
+                .on('drag', this.onNodeDragged)
+                .on('end', this.onNodeDragEnd))
+            .selectAll('circle')
             .attr('fill', '#f92a34');
 	}
 
@@ -182,7 +188,7 @@ class ForceGraph extends Graph {
 
 			var coord = self.calculateCircleCoords(i, size, cX, cY);
 
-			d3.select(this).select('circle')
+			d3.select(this)
 				.transition()
 				.duration(1000)
 				.attr('cx', l => {
@@ -342,6 +348,8 @@ class ForceGraph extends Graph {
 			this.selectedNodes = [];
 
 		}
+
+        console.log(KEYS, d3.event.keyCode, this.selectedNodes);
 
 		//Circle layout Selection at position
 		if(d3.event.keyCode == KEYS.C){
