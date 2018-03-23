@@ -84,6 +84,8 @@ class Graph {
 
 	onZoom() {
         if (this.zoomable) {
+            this.transformFactor = d3.event.transform;
+
             this.links.attr("transform", d3.event.transform)
             this.nodes.attr("transform", d3.event.transform)
         }

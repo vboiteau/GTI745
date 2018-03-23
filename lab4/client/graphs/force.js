@@ -9,11 +9,23 @@ var tooltip = d3.select("body")
     .attr('id', 'tooltip')
     .style('opacity', 0);
 
+const KEYS = {
+	ESCAPE : 27,
+	C : 67
+}
+
 //Creates a Force Graph knowing the nodes, the links and the SVG container
 class ForceGraph extends Graph {
-
 	constructor(artists, influences, svg){
         super(artists, influences, svg);
+
+		//For keypresses on keyboard
+		d3.select('body').on('keydown', this.keyDownHandler.bind(this))
+		d3.select('body').on('keyup', this.keyUpHandler.bind(this))
+
+		this.svg.on('mousemove', function(){
+			self.currentPosition = d3.mouse(this);
+		});
 
 		//Setting up the d3 simulation
 		this.simulation = d3.forceSimulation();
@@ -28,6 +40,14 @@ class ForceGraph extends Graph {
         this.onNodeDragged = this.onNodeDragged.bind(this);
         this.onNodeDragEnd = this.onNodeDragEnd.bind(this);
         this.onTick = this.onTick.bind(this);
+		//To contain shift selected nodes
+		this.selectedNodes = [];
+
+		this.transformFactor = {
+			"k" : 1,
+			"x" : 0,
+			"y" : 0
+		}
 	}
 
 	init(){
@@ -43,6 +63,8 @@ class ForceGraph extends Graph {
         this.simulation
             .force('link')
             .links(this.influences);
+
+        this.enableZoom();
 	}
 
 	drawNodes(){
@@ -53,6 +75,23 @@ class ForceGraph extends Graph {
                 .on('start', this.onNodeDragStart)
                 .on('drag', this.onNodeDragged)
                 .on('end', this.onNodeDragEnd))
+            .on('click', function() {
+
+                if(!self.shiftKey)
+                    return;
+
+                if(self.selectedNodes.indexOf(this) < 0){
+
+                    self.selectedNodes.push(this);
+
+                    d3.select(this).classed('selected', true);
+
+                    d3.select(this).selectAll('circle')
+                        .style('stroke-width', 2)
+                        .style('stroke', '#999')
+                }
+            })
+            .attr('fill', '#f92a34');
 	}
 
 
@@ -68,6 +107,20 @@ class ForceGraph extends Graph {
             })
 	}
 
+	//Allows dragging and zooming for the graph
+	enableZoom(){
+
+
+        this.zoomHandler = d3.zoom()
+            .on("zoom", this.onZoom);
+
+        this.zoomHandler(this.svg); 
+
+	}
+
+	disableZoom(){
+		this.zoomHandler.on("zoom", null);
+	}
 
 	//Basically the update when the graphs changes
 	onTick(){
@@ -108,29 +161,26 @@ class ForceGraph extends Graph {
 	}
 
 	//End
-    onNodeDragEnd(d) {
-        if (!d3.event.active) this.simulation.alphaTarget(0);
-        d.fx = null;
-        d.fy = null;
-    }
+	onNodeDragEnd(d) {
+		if (!d3.event.active) this.simulation.alphaTarget(0);
+		d.fx = null;
+		d.fy = null;
+	}
 
-	disposeInCircle(){
-        console.log('yo');
+	disposeInCircle(className, cX=this.width/2, cY=this.height/2){
 
 		var self = this;
 
 		self.simulation.stop()
 
-		var size = d3.selectAll(".node").size();
-		var cX = this.width/2;
-		var cY = this.height/2;
+		var size = d3.selectAll(className).size();
 
 		var lineChanges = []
 
-		//Setting positions around the circle (INSTANT)
-		d3.selectAll(".node").each(function(d, i){
+		//Setting positions around the circle
+		d3.selectAll(className).each(function(d, i){
 
-			var coord = self.calculateCircleCoords(i, size);
+			var coord = self.calculateCircleCoords(i, size, cX, cY);
 
 			d3.select(this).select('circle')
 				.transition()
@@ -151,7 +201,6 @@ class ForceGraph extends Graph {
 			var src = d3.selectAll(".links line").filter(function(l){return l.source === d})
 			var trgt = d3.selectAll(".links line").filter(function(l){return l.target === d})
 
-
 			//We must do this because we can't put multiple transitions separatly on a DOM element.
 			//We must keep a reference to the lines and how they must be changed and use transition once.
 			if(!src.empty()){
@@ -162,7 +211,9 @@ class ForceGraph extends Graph {
 						lineChanges.push({
 							"line": this, 
 							"x1": coord.x, 
-							"y1": coord.y
+							"y1": coord.y,
+							"x2": line.target.x,
+							"y2": line.target.y
 						});
 					}
 					else{
@@ -181,10 +232,13 @@ class ForceGraph extends Graph {
 			if(!trgt.empty()){
 
 				trgt.each(function(line){
+					//If not already in list
 					if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
 					{
 						lineChanges.push({
 							"line": this, 
+							"x1": line.source.x,
+							"y1": line.source.y,
 							"x2": coord.x, 
 							"y2": coord.y
 						});
@@ -216,18 +270,19 @@ class ForceGraph extends Graph {
 			.attr('y2', line.y2)
 		})
 
-		self.simulation.alpha(0.3).restart();
+		setTimeout(function(){
+			self.simulation.alpha(0.3).restart();
+		}, 1000)
 
 	}
 
-	calculateCircleCoords(i, numberOfNodes){
+	calculateCircleCoords(i, numberOfNodes, cX, cY){
 
 		var angle = i * (2*Math.PI/numberOfNodes);
 
-		var cX = this.width/2;
-		var cY = this.height/2;
+		var arcLength = 2*Math.PI/numberOfNodes;
 
-		var radius = 400;
+		var radius = 20/arcLength;
 
 		return {
 			"x" : cX + radius * Math.cos(angle), 
@@ -235,6 +290,78 @@ class ForceGraph extends Graph {
 		}
 
 		
+	}
+
+	keyDownHandler(){
+
+		this.shiftKey = d3.event.shiftKey || d3.event.metaKey;
+		this.ctrlKey = d3.event.ctrlKey;
+
+		if(this.shiftKey){
+			this.disableZoom();
+		}
+
+	}
+
+	keyUpHandler(){
+
+		//Enable zoom if shift was pressed in last keypress, but was released
+		if(this.shiftKey && !d3.event.shiftKey){
+			this.enableZoom()
+		}
+
+		this.shiftKey = d3.event.shiftKey || d3.event.metaKey;
+		this.ctrlKey = d3.event.ctrlKey;
+
+		/* SHIFT + KEYBIND */
+		if(this.shiftKey){
+
+		}
+
+		/* CTRL + KEYBIND */
+
+		if(this.ctrlKey){
+
+		}
+
+		/* REGULAR KEYBINDS */
+
+		//Unselect when pressing escape
+		if(d3.event.keyCode == KEYS.ESCAPE){
+			console.log("Unselect nodes")
+			
+			this.selectedNodes.forEach(function(d){
+
+				d3.select(d).classed('selected', false);
+
+				d3.select(d).selectAll('circle')
+            		.style('stroke-width', 0)
+
+			})
+
+			this.selectedNodes = [];
+
+		}
+
+		//Circle layout Selection at position
+		if(d3.event.keyCode == KEYS.C){
+
+			//Better have atleast 3 nodes so it looks like a circle
+			if(this.selectedNodes.length <= 2)
+				return;
+
+			//Coords according to current transform
+			this.currentPosition[0] = (this.currentPosition[0]-this.transformFactor.x) / this.transformFactor.k
+			this.currentPosition[1] = (this.currentPosition[1]-this.transformFactor.y) / this.transformFactor.k
+
+			this.disposeInCircle(
+				".node.selected", 
+				this.currentPosition[0], 
+				this.currentPosition[1]
+			);
+			
+		}
+
 	}
 
 
