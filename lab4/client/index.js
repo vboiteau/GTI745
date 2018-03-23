@@ -1,7 +1,8 @@
 import * as d3 from 'd3';
 import Artist from './data/Artist.txt';
 import ArtistInf from './data/Artist_influenced_by.txt';
-import { ForceGraph } from './ForceGraph.js'
+import { ForceGraph } from './ForceGraph.js';
+import { ConcentricCircleGraph } from './ConcentricCircleGraph.js';
 
 var svg = d3.select("svg");
 
@@ -18,7 +19,7 @@ d3.csv(Artist, artist => Object.assign(artist, {
 
         var reduced = getAmountOfNodes(100, influences, artists);
 
-        var forceGraph = new ForceGraph(reduced.artists, reduced.influences, svg);
+        var forceGraph = new ConcentricCircleGraph(reduced.artists, reduced.influences, svg);
 
         forceGraph.init();
 
