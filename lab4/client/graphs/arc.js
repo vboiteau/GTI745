@@ -5,13 +5,9 @@ import Graph from './Graph';
 class ArcGraph extends Graph {
     constructor(artists, influences, svg) {
         super(artists, influences, svg);
+
         this.plot = svg.append('g')
             .attr('transform', `translate(${this.pad}, ${this.pad})`);
-
-        this.influences.forEach(d => {
-            d.source = this.artists.find(artist => artist.id === d.source);
-            d.target = this.artists.find(artist => artist.id === d.target);
-        });
 
         this.linearLayout();
 
@@ -21,7 +17,7 @@ class ArcGraph extends Graph {
     }
 
     get margin() {
-        return 20;
+        return 40;
     }
 
     get pad() {
@@ -80,17 +76,11 @@ class ArcGraph extends Graph {
     }
 
     drawNodes() {
-        this.plot
-            .selectAll('.nodes')
-            .data(this.artists)
-            .enter()
-            .append('circle')
-            .attr('class', 'node')
-            .attr('id', d => d.id)
+        super.drawNodes();
+        console.log(this.nodes);
+        this.nodes
             .attr('cx', d => d.x)
-            .attr('cy', d => d.y)
-            .attr('r', this.nodeRadius)
-            .style('fill', '#1a1a1a');
+            .attr('cy', d => d.y);
     }
 }
 
