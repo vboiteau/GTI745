@@ -9,7 +9,7 @@ var tooltip = d3.select("body")
     .style('opacity', 0);
 
 //Creates a Concentric Circle Graph knowing the nodes, the links and the SVG container
-class ConcentricCircleGraph{
+class ConcentricCircleGraph {
 
 	constructor(nodes, links, container){
 
@@ -33,13 +33,15 @@ class ConcentricCircleGraph{
 		    .force("charge", d3.forceManyBody())
             .force("center", d3.forceCenter(this.width / 2, this.height / 2));
             //.force("collide", d3.forceCollide(100));
-
 	}
 
 	init(){
 
-		this.initLinks();
-		this.initNodes();
+        var g = this.container.append('g')
+            .attr('id', 'root');
+
+		this.initLinks(g);
+		this.initNodes(g);
 
 		this.simulation
             .nodes(this.nodesData)
@@ -50,16 +52,21 @@ class ConcentricCircleGraph{
             .links(this.linksData);
 
         this.initZoom();
+
+        //this.drawCircles();
 	}
 
-	initNodes(){
+	initNodes(g){
+
+        var color = d3.scaleOrdinal(d3.schemeCategory20);
 
 		//Root <g> element of the node
-		this.nodeElements = this.container.append('g')
+		this.nodeElements = g.append('g')
             .attr('class', 'nodes')
             .selectAll('nodes')
             .data(this.nodesData)
-            .enter().append('g')
+            .enter()
+            .append('g')
             .attr('class', 'node')
             .on('mouseover', d => {
                 console.log(d, 'mouseover');
@@ -82,20 +89,20 @@ class ConcentricCircleGraph{
         //Circle element inside the <g> element (node)
         this.circleElements = this.nodeElements.append("circle")
             .attr('r', 5)
-            .attr('fill', d => 'black')
-
-        //Label element inside the <g> element (node)
-        /*this.labelElements = this.nodeElements.append("text")
-            .attr("dy", ".35em")
-            .attr("fill", "red")
-            .text(function (d) { return d.artist; });*/
+            //.attr('fill', d => 'black')
+            .attr("fill", function(d){
+                if (d["artist"] !== "")
+                    return color(d["artist"]);
+                else
+                    return "black";
+            });
 	}
 
 
-	initLinks(){
+	initLinks(g){
 
 		//<line> element to represent link
-		this.linkElements = this.container.append('g')
+		this.linkElements = g.append('g')
             .attr('class', 'links')
             .selectAll('line')
             .data(this.linksData)
@@ -128,7 +135,8 @@ class ConcentricCircleGraph{
                 return d.source.y;
             })
             .attr("x2", d => d.target.x)
-            .attr("y2", d => d.target.y);
+            .attr("y2", d => d.target.y);  
+
         this.circleElements
             .attr("cx", function(d) { return d.x; })
             .attr("cy", function(d) { return d.y; });
@@ -171,18 +179,31 @@ class ConcentricCircleGraph{
 
 		var self = this;
 
-		self.simulation.stop()
+		self.simulation.stop();
 
-		var size = d3.selectAll(".node").size();
+        var size = d3.selectAll(".node").size();
 		var cX = this.width/2;
-		var cY = this.height/2;
+        var cY = this.height/2;
+        var circleNumber = 1;
+        var count = 0;
 
-		var lineChanges = []
+		var lineChanges = [];
 
 		//Setting positions around the circle (INSTANT)
 		d3.selectAll(".node").each(function(d, i){
+            var coord = {'x': 0, 'y' : 0 };
+            
+            if(i == 0){
+                coord.x = cX;
+                coord.y = cY;
+            }
+            else 
+                coord = self.calculateCircleCoords(i, 20, circleNumber);
 
-			var coord = self.calculateCircleCoords(i, size);
+            if(count > 20) { 
+                count = 0;
+                circleNumber++;
+            }
 
 			d3.select(this).select('circle')
 				.transition()
@@ -210,7 +231,7 @@ class ConcentricCircleGraph{
 				
 				src.each(function(line){
 
-					console.log(this)
+					//console.log(this)
 
 					if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
 					{
@@ -237,7 +258,7 @@ class ConcentricCircleGraph{
 
 				trgt.each(function(line){
 
-					console.log(this)
+					//console.log(this)
 
 					if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
 					{
@@ -260,6 +281,7 @@ class ConcentricCircleGraph{
 				});
 			}
 
+            count++;
 		});
 
 		console.log(lineChanges.length)
@@ -278,16 +300,50 @@ class ConcentricCircleGraph{
 
 		self.simulation.alpha(0.3).restart();
 
-	}
+    }
+    
+    displayCircular() {
+        var self = this;
 
-	calculateCircleCoords(i, numberOfNodes){
+		//self.simulation.stop()
+
+        var nodes = d3.selectAll(".node");
+        var size = nodes.size();
+        var nodeData = nodes.data();
+        //console.log(d3.selectAll(".node").data());
+        
+		var cX = this.width/2;
+		var cY = this.height/2;
+
+        var lineChanges = []
+        var nodesTargets = [];
+
+        var links = d3.selectAll(".links line");  
+        nodesTargets = this.getNodeTargetsLinks(nodeData[0], links);
+
+		//Setting positions around the circle (INSTANT)
+		// d3.selectAll(".node").each(function(d, i){
+
+        // });
+    }
+
+    getNodeTargetsLinks(node, links) {
+        var src = links.filter(function(l){return l.source === node});
+
+        var targetIds = [];
+        src.each(function(d, i){
+            targetIds.push(d.influencer_pgid);
+        });
+    }
+
+	calculateCircleCoords(i, numberOfNodes, circleNumber){
 
 		var angle = i * (2*Math.PI/numberOfNodes);
 
 		var cX = this.width/2;
 		var cY = this.height/2;
 
-		var radius = 400;
+		var radius = circleNumber * 100;
 
 		return {
 			"x" : cX + radius * Math.cos(angle), 
@@ -297,15 +353,19 @@ class ConcentricCircleGraph{
 		
 	}
 
-    //optional function
     drawCircles(){
+        var size = d3.selectAll(".node").size();
+        var g = d3.select("#root");
+
         for(var i=0; i < 20; i++){
             var radius = (i + 1) * 80;
+            var coord = this.calculateCircleCoords(i, size);
+
             g.append("circle")
-                .attr("cx", cx)
-                .attr("cy", cy)
+                .attr("cx", coord.x)
+                .attr("cy", coord.y)
                 .attr("r", radius )
-                .style("stroke","gray")
+                .style("stroke","black")
                 .style("fill","none");
         }
     }

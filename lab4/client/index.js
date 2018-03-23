@@ -19,11 +19,12 @@ d3.csv(Artist, artist => Object.assign(artist, {
 
         var reduced = getAmountOfNodes(100, influences, artists);
 
-        var forceGraph = new ConcentricCircleGraph(reduced.artists, reduced.influences, svg);
+        var forceGraph = new ForceGraph(reduced.artists, reduced.influences, svg);
 
         forceGraph.init();
 
-        //setTimeout(function(){forceGraph.disposeInCircle()}, 1000)
+        //setTimeout(function(){forceGraph.disposeInCircle()}, 1000);
+        //setTimeout(function(){forceGraph.displayCircular()}, 1000);
         
     });
 });
