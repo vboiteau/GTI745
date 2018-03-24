@@ -95,8 +95,7 @@ class ForceGraph extends Graph {
             .call(d3.drag()
                 .on('start', this.onNodeDragStart)
                 .on('drag', this.onNodeDragged)
-                .on('end', this.onNodeDragEnd))
-            .attr('fill', '#f92a34');
+                .on('end', this.onNodeDragEnd));
 	}
 
 

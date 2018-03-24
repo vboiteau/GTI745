@@ -6,6 +6,9 @@ class Graph {
         this.influences = influences;
         this.svg = svg;
         this.zoomable = zoomable;
+        this.color = d3.scaleOrdinal(d3.schemeCategory20);
+
+        console.dir(this.markets);
 
         this.svg
             .attr('width', this.width)
@@ -56,7 +59,8 @@ class Graph {
                 this.tooltip.transition()
                     .duration(200)
                     .style('opacity', 0);
-            });
+            })
+            .attr('fill', d => this.color(this.getArtistColorPosition(d)));
     }
 
     get nodeRadius() {
@@ -89,6 +93,20 @@ class Graph {
             this.nodes.attr("transform", d3.event.transform)
         }
 	}
+
+    get markets() {
+        return [...new Set(this.artists.reduce((current, artist) => [...current, ...artist.markets.map(market => market.name)], []))];
+    }
+
+    getMarketPosition(name) {
+        return this.markets.findIndex(market => market === name);
+    }
+
+    getArtistColorPosition(artist) {
+        const [{ name }] = artist.markets;
+        console.log(name);
+        return this.getMarketPosition(name);
+    }
 
 }
 
