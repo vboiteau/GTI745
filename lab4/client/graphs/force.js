@@ -171,7 +171,7 @@ class ForceGraph extends Graph {
 		d.fy = null;
 	}
 
-	disposeInCircle(className, cX=this.width/2, cY=this.height/2){
+	disposeInCircle(className=".node", cX=this.width/2, cY=this.height/2){
 
 		var self = this;
 
@@ -347,18 +347,27 @@ class ForceGraph extends Graph {
 
 		}
 
-        console.log(KEYS, d3.event.keyCode, this.selectedNodes);
+        //console.log(KEYS, d3.event.keyCode, this.selectedNodes);
 
 		//Circle layout Selection at position
 		if(d3.event.keyCode == KEYS.C){
+
+			console.log("CENTER points")
+
+			//Center everything around mouse
+			if(this.selectedNodes.length == 0)
+			{
+				this.disposeInCircle();
+				return;
+			}
 
 			//Better have atleast 3 nodes so it looks like a circle
 			if(this.selectedNodes.length <= 2)
 				return;
 
 			//Coords according to current transform
-			this.currentPosition[0] = (this.currentPosition[0]-this.transformFactor.x) / this.transformFactor.k
-			this.currentPosition[1] = (this.currentPosition[1]-this.transformFactor.y) / this.transformFactor.k
+			this.currentPosition[0] = (this.currentPosition[0]-this.transformFactor.x-this.pad) / this.transformFactor.k
+			this.currentPosition[1] = (this.currentPosition[1]-this.transformFactor.y-this.pad) / this.transformFactor.k
 
 			this.disposeInCircle(
 				".node.selected", 
