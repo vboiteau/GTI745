@@ -52,7 +52,7 @@ class Graph {
         var self = this;
 
         //Remove everything inside legend
-        this.legend.select(".color").html("");
+        this.legend.select(".colors").html("");
 
         var exists = [];
 
