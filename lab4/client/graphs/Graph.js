@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 
+
 class Graph {
     constructor(artists, influences, svg, zoomable = true) {
         this.artists = artists;
@@ -8,7 +9,7 @@ class Graph {
         this.zoomable = zoomable;
         this.color = d3.scaleOrdinal(d3.schemeCategory20);
 
-        console.dir(this.markets);
+        //console.dir(this.markets);
 
         this.svg
             .attr('width', this.width)
@@ -18,6 +19,21 @@ class Graph {
             .append("div")
             .attr('id', 'tooltip')
             .style('opacity', 0);
+
+        //Add Hover behavior to legend
+        this.legend = d3.select("body #legend")
+            .style('height', this.height + "px")
+            .on("mouseover", function(d,i){
+                d3.select(this).transition()
+                    .duration(500)
+                    .style("left", 0+ "px")
+            })
+            .on("mouseout", function(d,i) {
+                d3.select(this).transition()
+                    .duration(500)
+                    .style("left", -240 + "px");
+            });
+
 
         this.plot = svg.append('g')
             .attr('transform', `translate(${this.pad}, ${this.pad})`);
@@ -29,6 +45,40 @@ class Graph {
 
     init() {
         this.initZoom();
+    }
+
+    addColorsToLegend(){
+
+        var self = this;
+
+        //Remove everything inside legend
+        this.legend.select(".color").html("");
+
+        var exists = [];
+
+        this.nodes.each(function(d,i){
+
+            var [{ name }] = d.markets;
+
+            if(exists.indexOf(name) < 0)
+            {
+
+                var market = self.legend.select('.colors').append("div")
+                    .attr('class', 'market')
+                
+                market.append("div")
+                    .attr('class', 'color')
+                    .style('background-color', self.color(self.getArtistColorPosition(d)))
+
+                market.append("div")
+                    .attr('class', 'name')
+                    .text(name)
+
+                exists.push(name);
+            }
+
+        });
+
     }
 
     get margin() {
@@ -104,7 +154,7 @@ class Graph {
 
     getArtistColorPosition(artist) {
         const [{ name }] = artist.markets;
-        console.log(name);
+        //console.log(name);
         return this.getMarketPosition(name);
     }
 

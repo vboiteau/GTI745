@@ -67,12 +67,14 @@ class ForceGraph extends Graph {
             .links(this.influences);
 
         this.enableZoom();
+
+
+        this.addColorsToLegend();
 	}
 
 	drawNodes(){
 		//Root <g> element of the node
         super.drawNodes();
-        console.log(this.nodes);
         const self = this;
 		this.nodes
             .on('click', function() {

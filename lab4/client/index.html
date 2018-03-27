@@ -45,6 +45,29 @@
         right: 1em;
         top: 1em;
       }
+      #legend{
+        position: absolute;
+        top:0em;
+        left:-240px;
+        width: 250px;
+        background: rgba(242, 242, 242, 0.75);
+      }
+      #legend .title{
+        width:100%;
+        text-align: center;
+      }
+      #legend .colors{
+        padding: 10px;
+      }
+      #legend .color{
+        width:10px;
+        height:10px;
+        margin-right:2px;
+        display: inline-block;
+      }
+      #legend .name{
+        display: inline-block;
+      }
     </style>
   </head>
   <body>
@@ -55,6 +78,10 @@
       <option value="arc">Arc</option>
       <option value="concentricCircle">Concentric Circle</option>
     </select>
+    <div id="legend">
+      <div class="title">Legend</div>
+      <div class="colors"></div>
+    </div>
     <script src="bundle.js"></script>
   </body>
 </html>

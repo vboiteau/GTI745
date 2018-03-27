@@ -6,7 +6,6 @@ import { ConcentricCircleGraph } from './graphs/concentricCircle.js';
 
 var svg = d3.select("svg");
 
-
 function selectDiagram(name) {
     dataGetter()
         .then(data => {
