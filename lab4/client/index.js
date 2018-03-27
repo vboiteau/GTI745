@@ -23,6 +23,7 @@ function selectDiagram(name) {
                 case 'concentricCircle':
                     var concentricCircleGraph = new ConcentricCircleGraph(data.artists, data.influences, svg);
                     concentricCircleGraph.init();
+                    setTimeout(function(){concentricCircleGraph.disposeInCircle()}, 1000)
                     break;
                 default:
                     console.log(`${name} as no diagram associated`);
