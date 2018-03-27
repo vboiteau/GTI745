@@ -341,7 +341,7 @@ class ForceGraph extends Graph {
 				d3.select(d).classed('selected', false);
 
 				d3.select(d)
-            		.style('stroke-width', 0)
+            		.attr('style', "")
 
 			})
 
