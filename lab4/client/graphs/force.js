@@ -68,8 +68,9 @@ class ForceGraph extends Graph {
 
         this.enableZoom();
 
-
         this.addColorsToLegend();
+
+        //setTimeout(function(){this.drawConvexHull("Hard Rock")}.bind(this), 5000);
 	}
 
 	drawNodes(){

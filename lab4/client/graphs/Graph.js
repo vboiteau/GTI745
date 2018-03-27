@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import * as utils from './../data/utils'
 
 
 class Graph {
@@ -144,6 +145,8 @@ class Graph {
 
             this.links.attr("transform", d3.event.transform)
             this.nodes.attr("transform", d3.event.transform)
+            this.polygon.attr("transform", d3.event.transform)
+
         }
 	}
 
@@ -163,6 +166,42 @@ class Graph {
             .filter((value, index, self) => { return self.indexOf(value) === index })
             .sort();
 
+    }
+
+    drawConvexHull(major){
+
+        //console.log(nodes)
+
+        var nodes = this.getNodesInMajor(major);
+
+        var points = [];
+
+        nodes.each( d => {
+            points.push([d.x, d.y]);
+        })
+
+        var hull = utils.convexHull(points);
+
+
+        this.polygon = this.svg.select("g")
+            .append("polygon")
+            .data([hull])
+            .attr("points", function(d){
+                return d.map(function(d){
+                    return d.join(",")
+                }).join(" ")
+            })
+            .attr("fill", d => this.color(this.getMajorColorPosition(major)))
+            .attr("fill-opacity", 0.2)
+            .attr("stroke", d => this.color(this.getMajorColorPosition(major)))
+            .attr("stroke-width", 2)
+
+    }
+
+    //Gets all nodes that are in the major market
+    getNodesInMajor(name){
+
+        return this.nodes.filter(d => { return d.major === name })
     }
 
     getMajorColorPosition(name){
