@@ -58,7 +58,10 @@ class Graph {
 
         this.nodes.each(function(d,i){
 
-            var [{ name }] = d.markets;
+            var name = d.major;
+
+            if(!name)
+                name = 'Unknown';
 
             if(exists.indexOf(name) < 0)
             {
@@ -68,7 +71,7 @@ class Graph {
                 
                 market.append("div")
                     .attr('class', 'color')
-                    .style('background-color', self.color(self.getArtistColorPosition(d)))
+                    .style('background-color', self.color(self.getMajorColorPosition(d.major)))
 
                 market.append("div")
                     .attr('class', 'name')
@@ -110,7 +113,7 @@ class Graph {
                     .duration(200)
                     .style('opacity', 0);
             })
-            .attr('fill', d => this.color(this.getArtistColorPosition(d)));
+            .attr('fill', d => this.color(this.getMajorColorPosition(d.major)));
     }
 
     get nodeRadius() {
@@ -146,6 +149,24 @@ class Graph {
 
     get markets() {
         return [...new Set(this.artists.reduce((current, artist) => [...current, ...artist.markets.map(market => market.name)], []))];
+    }
+
+    get majors() {
+
+        return this.artists.map(artist => { 
+                if(artist.major)
+                    return artist.major 
+            })
+            .filter(value => {
+                return typeof value === 'string';
+            })
+            .filter((value, index, self) => { return self.indexOf(value) === index })
+            .sort();
+
+    }
+
+    getMajorColorPosition(name){
+        return this.majors.findIndex(major => major === name);
     }
 
     getMarketPosition(name) {

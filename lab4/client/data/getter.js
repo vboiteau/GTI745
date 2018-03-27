@@ -141,7 +141,13 @@ export default () => new Promise(resolve => {
                         d.target = data.artists.find(artist => artist.id === d.target);
                     });
 
-                    console.log(data)
+                    /*var mjrs = majors.map(major => { 
+                            if(major.majorMarket)
+                                return major.majorMarket 
+                        } )
+                        .filter( (value, index, self) => { return self.indexOf(value) === index })
+
+                    console.log(mjrs.length)*/
 
                     resolve(data);
 
