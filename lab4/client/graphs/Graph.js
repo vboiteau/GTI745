@@ -230,7 +230,6 @@ class Graph {
 
         var hulls = this.svg.selectAll("polygon");
 
-
         hulls.each(function(hull) {
 
             var points = [];
