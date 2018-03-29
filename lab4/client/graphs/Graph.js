@@ -42,6 +42,12 @@ class Graph {
         this.onZoom = this.onZoom.bind(this);
 
         this.links = null;
+
+        this.transformFactor = {
+            "k" : 1,
+            "x" : 0,
+            "y" : 0
+        }
     }
 
     init() {
@@ -145,7 +151,7 @@ class Graph {
 
             this.links.attr("transform", d3.event.transform)
             this.nodes.attr("transform", d3.event.transform)
-            this.polygon.attr("transform", d3.event.transform)
+            this.svg.selectAll("polygon").attr("transform", d3.event.transform)
 
         }
 	}
@@ -168,6 +174,20 @@ class Graph {
 
     }
 
+    removeConvexHulls(){
+
+        this.svg.selectAll("polygon").remove();
+
+    }
+
+    drawConvexHulls(){
+
+        this.majors.forEach(major => {
+            this.drawConvexHull(major);
+        });
+
+    }
+
     drawConvexHull(major){
 
         //console.log(nodes)
@@ -183,7 +203,7 @@ class Graph {
         var hull = utils.convexHull(points);
 
 
-        this.polygon = this.svg.select("g")
+        this.svg.select("g")
             .append("polygon")
             .data([hull])
             .attr("points", function(d){
@@ -195,6 +215,7 @@ class Graph {
             .attr("fill-opacity", 0.2)
             .attr("stroke", d => this.color(this.getMajorColorPosition(major)))
             .attr("stroke-width", 2)
+            .attr("transform", `translate(${this.transformFactor.x}, ${this.transformFactor.y}) scale(${this.transformFactor.k})`)
 
     }
 

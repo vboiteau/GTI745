@@ -6,24 +6,26 @@ import { ConcentricCircleGraph } from './graphs/concentricCircle.js';
 
 var svg = d3.select("svg");
 
+var currentGraph = null;
+
 function selectDiagram(name) {
     dataGetter()
         .then(data => {
             switch(name) {
                 case 'force':
-                    var forceGraph = new ForceGraph(data.artists, data.influences, svg);
-                    forceGraph.init();
+                    currentGraph = new ForceGraph(data.artists, data.influences, svg);
+                    currentGraph.init();
 
                     //setTimeout(function(){forceGraph.disposeInCircle()}, 1000)
                     break;
                 case 'arc':
-                    var arcGraph = new ArcGraph(data.artists, data.influences, svg);
-                    arcGraph.init();
+                    currentGraph = new ArcGraph(data.artists, data.influences, svg);
+                    currentGraph.init();
                     break;
                 case 'concentricCircle':
-                    var concentricCircleGraph = new ConcentricCircleGraph(data.artists, data.influences, svg);
-                    concentricCircleGraph.init();
-                    setTimeout(function(){concentricCircleGraph.disposeInCircle()}, 1000)
+                    currentGraph = new ConcentricCircleGraph(data.artists, data.influences, svg);
+                    currentGraph.init();
+                    //setTimeout(function(){concentricCircleGraph.disposeInCircle()}, 1000)
                     break;
                 default:
                     console.log(`${name} as no diagram associated`);
@@ -35,6 +37,18 @@ document.querySelector('#diagramSelector').addEventListener('change', e => {
     svg.selectAll('*').remove();
     selectDiagram(e.target.value)
 });
+
+document.querySelector('#colorSelector').addEventListener('change', e => {
+    switch(e.target.value){
+        case "ch":
+            currentGraph.drawConvexHulls();
+            break;
+        case "colors":
+            currentGraph.removeConvexHulls();
+            break;
+    }
+});
+
 
 window.onload = () => {
     selectDiagram(document.querySelector('#diagramSelector').value);
