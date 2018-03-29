@@ -200,15 +200,21 @@ class Graph {
             points.push([d.x, d.y]);
         })
 
-        var hull = utils.convexHull(points);
-
+        var hull;
 
         this.svg.select("g")
             .append("polygon")
-            .data([hull])
+            .data([nodes])
             .attr("points", function(d){
-                return d.map(function(d){
-                    return d.join(",")
+
+                d.each(node => {
+                    points.push([node.x, node.y])
+                })
+
+                hull = utils.convexHull(points);
+
+                return hull.map(function(point){
+                    return point.join(",")
                 }).join(" ")
             })
             .attr("fill", d => this.color(this.getMajorColorPosition(major)))
@@ -216,6 +222,39 @@ class Graph {
             .attr("stroke", d => this.color(this.getMajorColorPosition(major)))
             .attr("stroke-width", 2)
             .attr("transform", `translate(${this.transformFactor.x}, ${this.transformFactor.y}) scale(${this.transformFactor.k})`)
+            .style("pointer-events", "none")
+    }
+
+    //When simulation is running update convex hulls
+    updateConvexHulls(){
+
+        var hulls = this.svg.selectAll("polygon");
+
+
+        hulls.each(function(hull) {
+
+            var points = [];
+
+            var hull = undefined;
+
+            d3.select(this)
+                .attr("points", function(d){
+
+                    d.each(node => {
+                        points.push([node.x, node.y])
+                    })
+
+                    hull = utils.convexHull(points);
+
+                    return hull.map(function(point){
+                        return point.join(",")
+                    }).join(" ")
+
+                })
+
+        });
+        
+
 
     }
 
