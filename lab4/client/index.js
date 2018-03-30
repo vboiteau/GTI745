@@ -6,19 +6,21 @@ import AdjMatrix  from './graphs/matrix.js';
 
 var svg = d3.select("svg");
 
+var currentGraph = null;
+
 function selectDiagram(name) {
     dataGetter()
         .then(data => {
             switch(name) {
                 case 'force':
-                    var forceGraph = new ForceGraph(data.artists, data.influences, svg);
-                    forceGraph.init();
+                    currentGraph = new ForceGraph(data.artists, data.influences, svg);
+                    currentGraph.init();
 
                     //setTimeout(function(){forceGraph.disposeInCircle()}, 1000)
                     break;
                 case 'arc':
-                    var arcGraph = new ArcGraph(data.artists, data.influences, svg);
-                    arcGraph.init();
+                    currentGraph = new ArcGraph(data.artists, data.influences, svg);
+                    currentGraph.init();
                     break;
                 case 'adjMatrix':
                     var adjMatrix = new AdjMatrix(data.artists, data.influences, svg);
@@ -34,6 +36,18 @@ document.querySelector('#diagramSelector').addEventListener('change', e => {
     svg.selectAll('*').remove();
     selectDiagram(e.target.value)
 });
+
+document.querySelector('#colorSelector').addEventListener('change', e => {
+    switch(e.target.value){
+        case "ch":
+            currentGraph.drawConvexHulls();
+            break;
+        case "colors":
+            currentGraph.removeConvexHulls();
+            break;
+    }
+});
+
 
 window.onload = () => {
     selectDiagram(document.querySelector('#diagramSelector').value);

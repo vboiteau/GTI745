@@ -42,6 +42,12 @@ class Graph {
         this.onZoom = this.onZoom.bind(this);
 
         this.links = null;
+
+        this.transformFactor = {
+            "k" : 1,
+            "x" : 0,
+            "y" : 0
+        }
     }
 
     init() {
@@ -145,7 +151,7 @@ class Graph {
 
             this.links.attr("transform", d3.event.transform)
             this.nodes.attr("transform", d3.event.transform)
-            this.polygon.attr("transform", d3.event.transform)
+            this.svg.selectAll("polygon").attr("transform", d3.event.transform)
 
         }
 	}
@@ -168,6 +174,20 @@ class Graph {
 
     }
 
+    removeConvexHulls(){
+
+        this.svg.selectAll("polygon").remove();
+
+    }
+
+    drawConvexHulls(){
+
+        this.majors.forEach(major => {
+            this.drawConvexHull(major);
+        });
+
+    }
+
     drawConvexHull(major){
 
         //console.log(nodes)
@@ -180,21 +200,60 @@ class Graph {
             points.push([d.x, d.y]);
         })
 
-        var hull = utils.convexHull(points);
+        var hull;
 
-
-        this.polygon = this.svg.select("g")
+        this.svg.select("g")
             .append("polygon")
-            .data([hull])
+            .data([nodes])
             .attr("points", function(d){
-                return d.map(function(d){
-                    return d.join(",")
+
+                d.each(node => {
+                    points.push([node.x, node.y])
+                })
+
+                hull = utils.convexHull(points);
+
+                return hull.map(function(point){
+                    return point.join(",")
                 }).join(" ")
             })
             .attr("fill", d => this.color(this.getMajorColorPosition(major)))
             .attr("fill-opacity", 0.2)
             .attr("stroke", d => this.color(this.getMajorColorPosition(major)))
             .attr("stroke-width", 2)
+            .attr("transform", `translate(${this.transformFactor.x}, ${this.transformFactor.y}) scale(${this.transformFactor.k})`)
+            .style("pointer-events", "none")
+    }
+
+    //When simulation is running update convex hulls
+    updateConvexHulls(){
+
+        var hulls = this.svg.selectAll("polygon");
+
+        hulls.each(function(hull) {
+
+            var points = [];
+
+            var hull = undefined;
+
+            d3.select(this)
+                .attr("points", function(d){
+
+                    d.each(node => {
+                        points.push([node.x, node.y])
+                    })
+
+                    hull = utils.convexHull(points);
+
+                    return hull.map(function(point){
+                        return point.join(",")
+                    }).join(" ")
+
+                })
+
+        });
+        
+
 
     }
 

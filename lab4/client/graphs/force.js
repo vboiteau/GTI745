@@ -45,11 +45,6 @@ class ForceGraph extends Graph {
 		//To contain shift selected nodes
 		this.selectedNodes = [];
 
-		this.transformFactor = {
-			"k" : 1,
-			"x" : 0,
-			"y" : 0
-		}
 	}
 
 	init(){
@@ -144,12 +139,16 @@ class ForceGraph extends Graph {
             })
             .attr("x2", d => d.target.x)
             .attr("y2", d => d.target.y);
+        
+        this.updateConvexHulls();
 
         //If we have labels
-        if(this.labelElements)
+        /*if(this.labelElements)
 	        this.labelElements
 	            .attr("x", function(d) { return d.x + LABEL_OFFSET; })
-	            .attr("y", function(d) { return d.y + LABEL_OFFSET; });
+	            .attr("y", function(d) { return d.y + LABEL_OFFSET; });*/
+
+
 	}
 
 	/* Node dragging methods */

@@ -45,6 +45,13 @@
         right: 1em;
         top: 1em;
       }
+
+      #colorSelector {
+        position: absolute;
+        right: 1em;
+        top:3em;
+      }
+
       #legend{
         position: absolute;
         top:0em;
@@ -78,6 +85,10 @@
       <option value="arc">Arc</option>
       <option value="adjMatrix" selected>Adjacency Matrix</option>
     </select>
+    <form id="colorSelector" action="">
+      <input type="radio" name="gender" value="colors" checked="checked"> Colors<br>
+      <input type="radio" name="gender" value="ch"> Convex Hull<br>
+    </form>
     <div id="legend">
       <div class="title">Legend</div>
       <div class="colors"></div>
