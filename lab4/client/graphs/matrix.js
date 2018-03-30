@@ -49,7 +49,7 @@ class AdjMatrix extends Graph {
     createAdjacencyMatrix(matrix, artists) {
         d3.select("svg")
             .append("g")
-            .attr("transform", "translate(50,50)")
+            .attr("transform", "translate(150,200)")
             .attr("id", "adjacencyG")
             .selectAll("rect")
             .data(matrix)
