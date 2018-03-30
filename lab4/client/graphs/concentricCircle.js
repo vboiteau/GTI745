@@ -15,6 +15,8 @@ class ConcentricCircleGraph {
 
 		this.container = container;
 
+
+
 		//Data
 		this.nodesData = nodes;
 		this.linksData = links;
@@ -107,7 +109,8 @@ class ConcentricCircleGraph {
             .selectAll('line')
             .data(this.linksData)
             .enter()
-            .append('line')
+			.append('line')
+			.attr('stroke','black')
             .attr('stroke-width', function(d) { 
                 return 2;
             })
@@ -170,40 +173,86 @@ class ConcentricCircleGraph {
 
 	//End
 	onNodeDragEnd(d) {
-	if (!d3.event.active) this.simulation.alphaTarget(0);
-		d.fx = null;
-		d.fy = null;
+		if (!d3.event.active) this.simulation.alphaTarget(0);
+			d.fx = null;
+			d.fy = null;
 	}
-
-	disposeInCircle(){
-
+    
+    displayCircular() {
 		var self = this;
+		self.simulation.stop()
 
-		self.simulation.stop();
+		var nodes = d3.selectAll(".node");
+		var links = d3.selectAll(".links line");  
+        var nodeData = nodes.data();
+		var nodesTargets = [];
 
-        var size = d3.selectAll(".node").size();
-		var cX = this.width/2;
-        var cY = this.height/2;
-        var circleNumber = 1;
-        var count = 0;
+		var newTargets = this.getNodeTargetsLinks([nodeData[0].pgid], links, null);
+		nodesTargets.push({ "circleNo" : 0 , "targets" : [nodeData[0].pgid] });
+		nodesTargets.push({ "circleNo" : 1 , "targets" : newTargets });
 
-		var lineChanges = [];
+		// Get separated arrays of ids.
+		for(var i = 2; i <= nodeData.length; i++){
+			var lastNodes = nodesTargets[nodesTargets.length - 1];
+			newTargets = this.getNodeTargetsLinks(lastNodes.targets, links, nodeData);
+
+			if(newTargets.length === 0)
+			{
+				break;
+			}
+
+			nodesTargets.push({ "circleNo" : i, "targets" : newTargets});
+		}
 
 		//Setting positions around the circle (INSTANT)
-		d3.selectAll(".node").each(function(d, i){
+		nodesTargets.forEach(function(t, i) {
+			var childNodes = nodes.filter(d => t.targets.includes(d.pgid));
+			self.drawNodes(childNodes, t.circleNo);
+		});
+
+		
+	}
+
+    getNodeTargetsLinks(sourcesId, links, nodeTargets) {
+		var src = links.filter(d => sourcesId.includes(d.source.pgid));
+
+		var targetIds = [];
+        src.each(function(d, i){
+			if(nodeTargets != null)
+			{
+				if(!nodeTargets.includes(d.influencer_pgid))
+				{
+					targetIds.push(d.influencer_pgid);
+				}
+			}
+			else
+			{
+				targetIds.push(d.influencer_pgid);
+			}
+		});
+		
+		return targetIds;
+	}
+	
+	drawNodes(childNodes, circleNumber) {
+		var self = this;
+		var cX = this.width/2;
+		var cY = this.height/2;
+		var lineChanges = [];
+		var childNodesSize = childNodes.size();
+
+		childNodes.each(function(d, i) {
             var coord = {'x': 0, 'y' : 0 };
             
-            if(i == 0){
+			if(i == 0)
+			{
                 coord.x = cX;
                 coord.y = cY;
             }
-            else 
-                coord = self.calculateCircleCoords(i, 20, circleNumber);
-
-            if(count > 20) { 
-                count = 0;
-                circleNumber++;
-            }
+			else 
+			{
+                coord = self.calculateCircleCoords(i, childNodesSize, circleNumber);
+			}
 
 			d3.select(this).select('circle')
 				.transition()
@@ -221,120 +270,68 @@ class ConcentricCircleGraph {
 				});
 
 			//Check if line must be changed 
-			var src = d3.selectAll(".links line").filter(function(l){return l.source === d})
+			//var src = d3.selectAll(".links line").filter(function(l){return l.source === d})
 			var trgt = d3.selectAll(".links line").filter(function(l){return l.target === d})
 
+			//console.log(src);
 
 			//We must do this because we can't put multiple transitions separatly on a DOM element.
 			//We must keep a reference to the lines and how they must be changed and use transition once.
-			if(!src.empty()){
+			// if(!src.empty()){
 				
-				src.each(function(line){
+			// 	src.each(function(line){
 
-					//console.log(this)
+			// 		//console.log(this)
 
-					if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
-					{
-						lineChanges.push({
-							"line": this, 
-							"x1": coord.x, 
-							"y1": coord.y
-						});
-					}
-					else{
-						for (var i in lineChanges) {
-							if (lineChanges[i].line === this) {
-								lineChanges[i].x1 = coord.x;
-								lineChanges[i].y1 = coord.y;
-								break; //Stop this loop, we found it!
-							}
-						}
-					}
+			// 		if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
+			// 		{
+			// 			lineChanges.push({
+			// 				"line": this, 
+			// 				"x1": coord.x, 
+			// 				"y1": coord.y
+			// 			});
+			// 		}
+			// 		else{
+			// 			for (var i in lineChanges) {
+			// 				if (lineChanges[i].line === this) {
+			// 					lineChanges[i].x1 = coord.x;
+			// 					lineChanges[i].y1 = coord.y;
+			// 					break; //Stop this loop, we found it!
+			// 				}
+			// 			}
+			// 		}
 
-				});
+			// 	});
 
-			}
-			if(!trgt.empty()){
+			// }
+			// if(!trgt.empty()){
 
-				trgt.each(function(line){
+			// 	trgt.each(function(line){
 
-					//console.log(this)
+			// 		//console.log(this)
 
-					if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
-					{
-						lineChanges.push({
-							"line": this, 
-							"x2": coord.x, 
-							"y2": coord.y
-						});
-					}
-					else{
-						for (var i in lineChanges) {
-							if (lineChanges[i].line === this) {
-								lineChanges[i].x2 = coord.x;
-								lineChanges[i].y2 = coord.y;
-								break; //Stop this loop, we found it!
-							}
-						}
-					}
+			// 		if(!lineChanges.some(function(el){return el.line === this}.bind(this)))
+			// 		{
+			// 			lineChanges.push({
+			// 				"line": this, 
+			// 				"x2": coord.x, 
+			// 				"y2": coord.y
+			// 			});
+			// 		}
+			// 		else{
+			// 			for (var i in lineChanges) {
+			// 				if (lineChanges[i].line === this) {
+			// 					lineChanges[i].x2 = coord.x;
+			// 					lineChanges[i].y2 = coord.y;
+			// 					break; //Stop this loop, we found it!
+			// 				}
+			// 			}
+			// 		}
 
-				});
-			}
-
-            count++;
+			// 	});
+			// }
 		});
-
-		console.log(lineChanges.length)
-
-		//Call the transition to move the line according to node layout
-		lineChanges.forEach(line => {
-
-			d3.select(line.line)
-			.transition()
-			.duration(1000)
-			.attr('x1', line.x1)
-			.attr('x2', line.x2)
-			.attr('y1', line.y1)
-			.attr('y2', line.y2)
-		})
-
-		self.simulation.alpha(0.3).restart();
-
-    }
-    
-    displayCircular() {
-        var self = this;
-
-		//self.simulation.stop()
-
-        var nodes = d3.selectAll(".node");
-        var size = nodes.size();
-        var nodeData = nodes.data();
-        //console.log(d3.selectAll(".node").data());
-        
-		var cX = this.width/2;
-		var cY = this.height/2;
-
-        var lineChanges = []
-        var nodesTargets = [];
-
-        var links = d3.selectAll(".links line");  
-        nodesTargets = this.getNodeTargetsLinks(nodeData[0], links);
-
-		//Setting positions around the circle (INSTANT)
-		// d3.selectAll(".node").each(function(d, i){
-
-        // });
-    }
-
-    getNodeTargetsLinks(node, links) {
-        var src = links.filter(function(l){return l.source === node});
-
-        var targetIds = [];
-        src.each(function(d, i){
-            targetIds.push(d.influencer_pgid);
-        });
-    }
+	}
 
 	calculateCircleCoords(i, numberOfNodes, circleNumber){
 
