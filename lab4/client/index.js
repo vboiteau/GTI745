@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import dataGetter from './data/getter';
 import { ForceGraph } from './graphs/force';
 import ArcGraph from './graphs/arc';
-import { ConcentricCircleGraph } from './graphs/concentricCircle.js';
+import AdjMatrix  from './graphs/matrix.js';
 
 var svg = d3.select("svg");
 
@@ -20,10 +20,9 @@ function selectDiagram(name) {
                     var arcGraph = new ArcGraph(data.artists, data.influences, svg);
                     arcGraph.init();
                     break;
-                case 'concentricCircle':
-                    var concentricCircleGraph = new ConcentricCircleGraph(data.artists, data.influences, svg);
-                    concentricCircleGraph.init();
-                    setTimeout(function(){concentricCircleGraph.disposeInCircle()}, 1000)
+                case 'adjMatrix':
+                    var adjMatrix = new AdjMatrix(data.artists, data.influences, svg);
+                    adjMatrix.init();
                     break;
                 default:
                     console.log(`${name} as no diagram associated`);
