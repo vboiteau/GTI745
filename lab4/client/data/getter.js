@@ -5,75 +5,6 @@ import ArtistMarket from './Artist_market_or_style.txt';
 import MajorMarket from './Major_market_to_market_key.txt';
 var data = null;
 
-//Removes superfluous links between Nodes
-function simplifyNodes(nodes){
-
-
-    var removeLinks = [];
-
-    //All Nodes
-    nodes.artists.forEach(artist => {
-
-        //Get direct neighbors
-        var directInfluence = findNeighbors(artist, nodes);
-
-        //For each directly influenced artist
-        directInfluence.forEach(direct => {
-
-            var indirectInfluence = findNeighbors(direct, nodes);
-
-            indirectInfluence.forEach(indirect => {
-
-                if(directInfluence.includes(indirect)){
-
-                    console.log(`${artist.artist} posses indirect link to ${indirect.artist}`)
-
-                    removeLinks.push(nodes.influences.find(function(i) {
-                        return i.target === artist && i.source === indirect;
-                    }));
-
-                }
-            });
-
-        });
-
-    });
-
-    nodes.influences.filter(function(influence, index, obj){
-        if(removeLinks.includes(influence)){
-            console.log(influence)
-
-            console.log(obj.splice(index, 1));
-        }
-
-
-    })
-
-    console.log(nodes.influences.length)
-
-    return nodes;
-
-}
-
-//Find the neighbors of node inside list of nodes
-function findNeighbors(node,nodes){
-
-    //console.log(node.artist + " influenced : ");
-
-    //Find directly infuenced artists
-    var influenced = nodes.influences.filter(influence => {
-
-        return influence.target === node
-    }).map(i => { return i.source } );
-
-    influenced.forEach(i => {
-        //console.log('%c \t' + i.artist, 'color: #FF0000')
-    });
-
-    return influenced;
-
-}
-
 function getAmountOfNodes(amount, influences, artists){
 
     var inf = [];
@@ -210,10 +141,7 @@ export default () => new Promise(resolve => {
                         d.target = data.artists.find(artist => artist.id === d.target);
                     });
 
-                    data = simplifyNodes(data);
-
                     resolve(data);
-
                 });
             });
         });

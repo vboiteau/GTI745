@@ -3,6 +3,7 @@ import dataGetter from './data/getter';
 import { ForceGraph } from './graphs/force';
 import ArcGraph from './graphs/arc';
 import AdjMatrix  from './graphs/matrix.js';
+import * as utils from './data/utils'
 
 var svg = d3.select("svg");
 
@@ -23,8 +24,13 @@ function selectDiagram(name) {
                     currentGraph.init();
                     break;
                 case 'adjMatrix':
-                    var adjMatrix = new AdjMatrix(data.artists, data.influences, svg);
-                    adjMatrix.init();
+                    currentGraph = new AdjMatrix(data.artists, data.influences, svg);
+                    currentGraph.init();
+                    break;
+                case 'simplify':
+                    var simplifiedData =  utils.simplifyNodes(data);
+                    currentGraph = new ForceGraph(simplifiedData.artists, simplifiedData.influences, svg);
+                    currentGraph.init();
                     break;
                 default:
                     console.log(`${name} as no diagram associated`);
